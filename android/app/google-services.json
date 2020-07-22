@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "267349452091",
+    "firebase_url": "https://landlord-75337.firebaseio.com",
+    "project_id": "landlord-75337",
+    "storage_bucket": "landlord-75337.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267349452091:android:91c473ec1bc64e72a5031e",
+        "android_client_info": {
+          "package_name": "com.example.landlord_happy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "267349452091-s7s6uaqum3k2d096r6hmb1elk4h5ek56.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqcvOQeReIN5WX9VIahWsj1raaI6Z_pvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "267349452091-s7s6uaqum3k2d096r6hmb1elk4h5ek56.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "267349452091-bl211lfgkdqlepm3r1pndbd8o8a4t0o5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.landlordhappyapp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267349452091:android:c34bcbb6b252a3bca5031e",
+        "android_client_info": {
+          "package_name": "com.example.landlordhappyapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "267349452091-s7s6uaqum3k2d096r6hmb1elk4h5ek56.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqcvOQeReIN5WX9VIahWsj1raaI6Z_pvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "267349452091-s7s6uaqum3k2d096r6hmb1elk4h5ek56.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "267349452091-bl211lfgkdqlepm3r1pndbd8o8a4t0o5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.landlordhappyapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
