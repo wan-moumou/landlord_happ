@@ -25,7 +25,7 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
   List<String> roomName = [];
 
   List<String> tenantName = [];
-
+  List<String> payEd = [];
   List<String> money = [];
   bool upData;
   List<String> type = [];
@@ -51,17 +51,22 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
         for (var data in pieHomeMoneyData.documents) {
           buyTime.add(data.data['購買時間']);
           print(buyTime);
-          savePieData('購買時間', buyTime);
+          savePieData('房客購買時間', buyTime);
+        }
+        for (var data in pieHomeMoneyData.documents) {
+          payEd.add(data.data['已繳款'].toString());
+          print(payEd);
+          saveBoolPieData('已繳款', payEd);
         }
         for (var data in pieHomeMoneyData.documents) {
           money.add(data.data['總價']);
           print(money);
-          savePieData('金額', money);
+          savePieData('房客金額', money);
         }
         for (var data in pieHomeMoneyData.documents) {
           type.add(data.data['類型']);
           print(type);
-          savePieData('購買類型', type);
+          savePieData('房客購買類型', type);
         }
       }
       await Firestore.instance
@@ -97,7 +102,7 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
   Future getBuyTimeData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('購買時間');
+    userName = prefs.getStringList('房客購買時間');
 
     if (userName != null) {
       return buyTime = userName;
@@ -107,7 +112,7 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
   Future getMoneyData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('金額');
+    userName = prefs.getStringList('房客金額');
 
     if (userName != null) {
       return money = userName;
@@ -117,7 +122,7 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
   Future getTypeData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('購買類型');
+    userName = prefs.getStringList('房客購買類型');
 
     if (userName != null) {
       return type = userName;
@@ -125,6 +130,10 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
   }
 
   Future savePieData(String key, List<String> value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList(key, value);
+  }
+  Future saveBoolPieData(String key,List<String>  value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setStringList(key, value);
   }
@@ -189,12 +198,12 @@ class _TenantIncomeAndExpensesState extends State<TenantIncomeAndExpenses> {
                   SingleChildScrollView(
                       child: Container(
                           color: AppConstants.tenantBackColor,
-                          height: MediaQuery.of(context).size.height * 0.8,
+                          height: MediaQuery.of(context).size.height * 0.82,
                           child: ListView.builder(
                               controller: _msgController,
                               shrinkWrap: true,
                               itemCount: items,
-                              itemBuilder: (context, index) => Container(
+                              itemBuilder: (context, index) =>payEd[index]=='false'?Container(): Container(
                                     color: index.isEven
                                         ? Colors.green[50]
                                         : Colors.white,

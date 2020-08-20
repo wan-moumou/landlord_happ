@@ -8,6 +8,7 @@ class NewHouse {
   String smokeValues = '';
   String partyValues = '';
   String petValues = '';
+
   //輸入匡值
   String addressValues = ''; //地址
   String floorValues = ''; //樓層
@@ -24,6 +25,8 @@ class NewHouse {
   String haveBalcony = ''; //有無陽台
   String haveKitchen = ''; //有無廚房
   String haveLivingRoom = ''; //有無客廳
+  String payTimeDate = ''; //付款日期
+  String contractPeriodDate = ''; //付款日期
 
   NewHouse(
       {this.addressValues,
@@ -31,6 +34,7 @@ class NewHouse {
       this.houseMoney,
       this.waterMoney,
       this.electricityMoney});
+
   Map<String, dynamic> data = {
     '縣市': '請選擇',
     '建物型態': '請選擇',
@@ -44,11 +48,29 @@ class NewHouse {
     '客廳': '請選擇',
     '廚房': '請選擇',
     '陽台': '請選擇',
+    '付款日期': '請選擇',
+    '合約時長':'請選擇'
   };
   List<Map<String, dynamic>> livingRoom = [
     {'客廳': '請選擇'},
     {'客廳': '有'},
     {'客廳': '無'},
+  ];
+  List<Map<String, dynamic>> payTime = [
+    {'付款日期': '請選擇'},
+    {'付款日期': '5'},
+    {'付款日期': '10'},
+    {'付款日期': '15'},
+    {'付款日期': '20'},
+    {'付款日期': '25'},
+  ];
+  List<Map<String, dynamic>> contractPeriod = [
+    {'合約時長': '請選擇'},
+    {'合約時長': '1'},
+    {'合約時長': '3'},
+    {'合約時長': '6'},
+    {'合約時長': '12'},
+
   ];
   List<Map<String, dynamic>> kitchen = [
     {'廚房': '請選擇'},
@@ -132,11 +154,13 @@ class NewHouse {
     {'寵物': '可'},
     {'寵物': '不可'},
   ];
+
   //繳費方式
   bool waterStoredValue = false;
-  bool storedValue = false;
+  bool storedValue = true;
   bool waterFixed = true;
-  bool fixed = true;
+  bool fixed = false;
+
   //其他費用
   bool managementFee = false;
   bool internetFee = false;

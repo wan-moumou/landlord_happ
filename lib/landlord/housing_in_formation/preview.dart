@@ -31,6 +31,7 @@ class PersonalTenantInformation extends StatefulWidget {
   final String cashTime;
   final String waterMoney;
   final String electricityMoney;
+  final String summerElectricityMoneyController;
   final bool television;
   final bool internetFee;
   final bool gasFee;
@@ -81,6 +82,7 @@ class PersonalTenantInformation extends StatefulWidget {
       @required this.cityValues,
       @required this.storedValue,
       @required this.otherFacilities,
+      @required this.summerElectricityMoneyController,
       @required this.fixed,
       @required this.url,
       @required this.url1,
@@ -148,6 +150,7 @@ class PersonalTenantInformation extends StatefulWidget {
 
 class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
   bool inAsyncCall = false;
+  bool noHasGatewayFixd = false;
   final _auth = FirebaseAuth.instance;
   final _firestore = Firestore.instance;
   var loginUser;
@@ -165,6 +168,8 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
     }
   }
 
+  String points;
+
   Future saveData() async {
     final currentUser = await _auth.currentUser();
     if (currentUser != null) {
@@ -178,7 +183,14 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
         '門鎖相關': {
           '門鎖編號': '',
           '有無門鎖': false,
-          '臨時密碼':'',
+          '臨時密碼': '',
+        },
+        '網關相關': {
+          '網關編號': '',
+          '有無電表': false,
+          '上期度數': '',
+          '本期度數': '',
+          '使用度數': '',
         },
         '照片位置': {
           '照片1': widget.url,
@@ -216,10 +228,12 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
           '房租': widget.houseMoney,
           '繳費時間': widget.cashTime,
           '電費': widget.electricityMoney,
+          '夏季電費': widget.summerElectricityMoneyController,
           '水費': widget.waterMoney,
           '水費每月固定': widget.waterStored,
-          '電費每月固定': widget.storedValue,
+          '電費每月固定': widget.fixed,
           '電費儲值': widget.storedValue,
+          '有電表儲值單位': noHasGatewayFixd,
           '管理費': widget.managementFee,
           '網路費': widget.internetFee,
           '第四臺': widget.television,
@@ -261,6 +275,7 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
         '附加設施': widget.otherFacilities,
         '生成時間': DateTime.now().toUtc()
       });
+      print({widget.fixed, widget.storedValue});
     }
   }
 
@@ -323,8 +338,8 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
                   HouseData(
                     title: '電費',
                     detail: widget.fixed
-                        ? '電費:${widget.electricityMoney}/月'
-                        : '電費:${widget.electricityMoney}/度',
+                        ? '非夏季電費:${widget.electricityMoney}/月\n夏季電費:${widget.summerElectricityMoneyController}/月'
+                        : '非夏季電費:${widget.electricityMoney}/度\n夏季電費:${widget.summerElectricityMoneyController}/度',
                   ),
                   HouseData(
                     title: '水費',
@@ -406,10 +421,6 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
                               have: widget.bedside,
                               title: '床頭組',
                             ),
-                            IconData(
-                              have: widget.wardrobe,
-                              title: '衣櫃',
-                            ),
                           ],
                         ),
                       ),
@@ -443,6 +454,10 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
                             IconData(
                               have: widget.locker,
                               title: '置物櫃',
+                            ),
+                            IconData(
+                              have: widget.wardrobe,
+                              title: '衣櫃',
                             ),
                           ],
                         ),
@@ -483,10 +498,6 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
                             IconData(
                               have: widget.wifi,
                               title: 'WIFI',
-                            ),
-                            IconData(
-                              have: widget.refrigerator,
-                              title: '冰箱',
                             ),
                             IconData(
                               have: widget.washingMachine,
@@ -556,6 +567,10 @@ class _PersonalTenantInformationState extends State<PersonalTenantInformation> {
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
                           children: <Widget>[
+                            IconData(
+                              have: widget.refrigerator,
+                              title: '冰箱',
+                            ),
                             IconData(
                               have: widget.preservation,
                               title: '保全設施',
@@ -688,7 +703,7 @@ class HouseIcon extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: Text(
-                  managementFee ? '保全設施' : '',
+                  managementFee ? '管理費' : '',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
               ),

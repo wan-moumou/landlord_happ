@@ -1,19 +1,20 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:credit_card/credit_card_model.dart';
-import 'package:credit_card/flutter_credit_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_icons/flutter_icons.dart';
-import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
+import 'package:landlord_happy/app_const/Adapt.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
 import 'package:landlord_happy/app_const/payData.dart';
 import 'package:landlord_happy/app_const/user.dart';
 import 'package:landlord_happy/rules_of_user.dart';
-import 'package:landlord_happy/tenant/tenant_my/pay/super_merchant_payment.dart';
 
-import 'ATM_payIng.dart';
+import '../../../http_post.dart';
+import 'payIng.dart';
 
 class TenantPay extends StatelessWidget {
   @override
@@ -116,11 +117,12 @@ class PayPag2 extends StatefulWidget {
 class _PayPag2State extends State<PayPag2> {
   String landlordID = '';
   String houseName = '';
+  String phoneNUM = '';
   String loginUser = '';
   final _firestore = Firestore.instance;
   final _auth = FirebaseAuth.instance;
   User userData = User();
-
+  String nowMonth;
   PayData payData = PayData();
 
   void getUserName() async {
@@ -128,8 +130,6 @@ class _PayPag2State extends State<PayPag2> {
     if (user != null) {
       loginUser = user.email;
     }
-    print(loginUser);
-
     await _firestore
         .collection("/房客/帳號資料/$loginUser")
         .getDocuments()
@@ -138,25 +138,52 @@ class _PayPag2State extends State<PayPag2> {
         User newUserData = User(
           name: f['name'],
         );
-        userData.name = newUserData.name;
-        landlordID = f['房東姓名'];
-        houseName = f['房屋名稱'];
+        setState(() {
+          userData.name = newUserData.name;
+          landlordID = f['房東姓名'];
+          houseName = f['房屋名稱'];
+          phoneNUM = f['手機號碼'];
+        });
       });
+      print(phoneNUM);
     });
-    setState(() {});
-  }
-
-  TextEditingController electricityType;
-
-  void http() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => Http()));
   }
 
   @override
   void initState() {
-    electricityType = TextEditingController();
+    nowMonth = DateTime.now().month.toString();
     getUserName();
     super.initState();
+  }
+
+  String text;
+
+  Future<String> getA(A, B, C, D, E, F, G) async {
+    if (await G) {
+      text = nowMonth == '6' ||
+              nowMonth == '7' ||
+              nowMonth == '8' ||
+              nowMonth == '9'
+          ? "${int.parse(B) + int.parse(C) + int.parse(D)}"
+          : "${int.parse(B) + int.parse(C) + int.parse(F)}";
+      setState(() {});
+    } else {
+      if (await A) {
+        text = "${int.parse(B) + int.parse(C)}";
+        setState(() {});
+      } else {
+        text = nowMonth == '6' ||
+                nowMonth == '7' ||
+                nowMonth == '8' ||
+                nowMonth == '9'
+            ? text =
+                "${int.parse(B) + (int.parse(D) * int.parse(E)) + int.parse(C)}"
+            : "${int.parse(B) + int.parse(F) + int.parse(C)}";
+        setState(() {});
+      }
+    }
+
+    return text;
   }
 
   @override
@@ -188,8 +215,15 @@ class _PayPag2State extends State<PayPag2> {
                         .document(houseName)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      print(houseName);
                       final data = snapshot.data;
+                      getA(
+                          data['房屋費用設定']['有電表儲值單位'],
+                          data['房屋費用設定']['房租'],
+                          data['房屋費用設定']['水費'],
+                          data['房屋費用設定']['夏季電費'],
+                          data['網關相關']['使用度數'],
+                          data['房屋費用設定']['電費'],
+                          data['房屋費用設定']['電費每月固定']);
                       return GestureDetector(
                           behavior: HitTestBehavior.translucent,
                           onTap: () {
@@ -221,27 +255,40 @@ class _PayPag2State extends State<PayPag2> {
                                               Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
-                                                      builder: (context) => HouseMoney(
-                                                          waterMoney:
-                                                              data['房屋費用設定']
-                                                                  ['水費'],
-                                                          eleMoney:
-                                                              data['房屋費用設定']
-                                                                  ['電費'],
-                                                          type: data['房屋費用設定']
-                                                                  ['電費儲值']
-                                                              ? "房租(含水費)"
-                                                              : !data['房屋費用設定']
-                                                                      ['電費儲值']
-                                                                  ? "房租(含水電費)"
-                                                                  : "房租",
-                                                          price: data['房屋費用設定']
-                                                                  ['電費儲值']
-                                                              ? "${int.parse(data['房屋費用設定']['房租']) + int.parse(data['房屋費用設定']['水費'])}"
-                                                              : !data['房屋費用設定']
-                                                                      ['電費儲值']
-                                                                  ? "${int.parse(data['房屋費用設定']['房租']) + int.parse(data['房屋費用設定']['電費']) + int.parse(data['房屋費用設定']['水費'])}"
-                                                                  : null)));
+                                                      builder: (context) =>
+                                                          HouseMoney(
+                                                            phoneNUM: phoneNUM,
+                                                            waterMoney:
+                                                                data['房屋費用設定']
+                                                                    ['水費'],
+                                                            eleMoney: nowMonth ==
+                                                                        '6' ||
+                                                                    nowMonth ==
+                                                                        '7' ||
+                                                                    nowMonth ==
+                                                                        '8' ||
+                                                                    nowMonth ==
+                                                                        '9'
+                                                                ? data['房屋費用設定']
+                                                                        [
+                                                                        '電費每月固定']
+                                                                    ? "${int.parse(data['房屋費用設定']['夏季電費'])}"
+                                                                    : "${int.parse(data['房屋費用設定']['夏季電費']) * int.parse(data['網關相關']['使用度數'])}"
+                                                                : data['房屋費用設定']
+                                                                        [
+                                                                        '電費每月固定']
+                                                                    ? "${int.parse(data['房屋費用設定']['電費'])}"
+                                                                    : "${int.parse(data['房屋費用設定']['電費']) * int.parse(data['網關相關']['使用度數'])}",
+                                                            type: data['房屋費用設定']
+                                                                    ['有電表儲值單位']
+                                                                ? "房租(含水費)"
+                                                                : !data['房屋費用設定']
+                                                                        [
+                                                                        '有電表儲值單位']
+                                                                    ? "房租(含水電費)"
+                                                                    : "房租",
+                                                            price: text,
+                                                          )));
                                             },
                                             child: Container(
                                                 width: 150,
@@ -276,18 +323,8 @@ class _PayPag2State extends State<PayPag2> {
                                                                 const EdgeInsets
                                                                     .all(10),
                                                             child: Container(
-                                                              child: data['房屋費用設定']
-                                                                      ['電費儲值']
-                                                                  ? Text(
-                                                                      "${int.parse(data['房屋費用設定']['房租']) + int.parse(data['房屋費用設定']['水費'])}/月")
-                                                                  : !data['房屋費用設定']
-                                                                          [
-                                                                          '電費儲值']
-                                                                      ? Text(
-                                                                          "${int.parse(data['房屋費用設定']['房租']) + int.parse(data['房屋費用設定']['水費']) + int.parse(data['房屋費用設定']['電費'])}/月")
-                                                                      : Text(
-                                                                          "${data['房屋費用設定']['房租']}/月"),
-                                                            ),
+                                                                child:
+                                                                    Text(text)),
                                                           )),
                                                     ],
                                                   ),
@@ -323,9 +360,8 @@ class _PayPag2State extends State<PayPag2> {
                                                       Expanded(
                                                           flex: 1,
                                                           child: Container(
-                                                            child: Text(
-                                                                    '${data['房屋費用設定']['水費']}/月\n包含至房租')
-                                                          )),
+                                                              child: Text(
+                                                                  '${data['房屋費用設定']['水費']}/月\n包含至房租'))),
                                                     ],
                                                   ),
                                                 )),
@@ -340,25 +376,27 @@ class _PayPag2State extends State<PayPag2> {
                                             MainAxisAlignment.spaceAround,
                                         children: <Widget>[
                                           FlatButton(
-                                            onPressed: !data['房屋費用設定']['電費儲值']
-                                                ? null
-                                                : () {
-                                                    Navigator.pop(context);
+                                            onPressed:
+                                                !data['房屋費用設定']['有電表儲值單位']
+                                                    ? null
+                                                    : () {
+                                                        Navigator.pop(context);
 
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder:
-                                                                (context) =>
-                                                                    HouseMoney(
-                                                                      type:
-                                                                          "電費",
-                                                                      price: data[
-                                                                              '房屋費用設定']
-                                                                          [
-                                                                          '電費'],
-                                                                    )));
-                                                  },
+                                                        Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        HouseMoney(
+                                                                          phoneNUM:
+                                                                              phoneNUM,
+                                                                          type:
+                                                                              "電費",
+                                                                          price: nowMonth == '6' || nowMonth == '7' || nowMonth == '8' || nowMonth == '9'
+                                                                              ? data['房屋費用設定']['夏季電費']
+                                                                              : data['房屋費用設定']['電費'],
+                                                                        )));
+                                                      },
                                             child: Container(
                                                 width: 150,
                                                 height: 150,
@@ -389,14 +427,30 @@ class _PayPag2State extends State<PayPag2> {
                                                           flex: 1,
                                                           child: Container(
                                                             child: data['房屋費用設定']
-                                                                    ['電費儲值']
+                                                                    ['有電表儲值單位']
                                                                 ? Padding(
-                                                                  padding: const EdgeInsets.all(10.0),
-                                                                  child: Text(
-                                                                      "${data['房屋費用設定']['電費']}/度"),
-                                                                )
-                                                                : Text(
-                                                                    '${data['房屋費用設定']['電費']}/月\n包含至房租'),
+                                                                    padding: const EdgeInsets
+                                                                            .all(
+                                                                        10.0),
+                                                                    child: Text(nowMonth == '6' ||
+                                                                            nowMonth ==
+                                                                                '7' ||
+                                                                            nowMonth ==
+                                                                                '8' ||
+                                                                            nowMonth ==
+                                                                                '9'
+                                                                        ? "${data['房屋費用設定']['夏季電費']}/度"
+                                                                        : "${data['房屋費用設定']['電費']}/度"),
+                                                                  )
+                                                                : Text(nowMonth == '6' ||
+                                                                        nowMonth ==
+                                                                            '7' ||
+                                                                        nowMonth ==
+                                                                            '8' ||
+                                                                        nowMonth ==
+                                                                            '9'
+                                                                    ? "${data['房屋費用設定']['夏季電費']}/度\n包含至房租"
+                                                                    : '${data['房屋費用設定']['電費']}/月\n包含至房租'),
                                                           )),
                                                     ],
                                                   ),
@@ -462,8 +516,10 @@ class HouseMoney extends StatefulWidget {
   final String price;
   final String waterMoney;
   final String eleMoney;
+  final String phoneNUM;
 
-  HouseMoney({this.type, this.price, this.waterMoney, this.eleMoney});
+  HouseMoney(
+      {this.type, this.price, this.waterMoney, this.eleMoney, this.phoneNUM});
 
   @override
   _HouseMoneyState createState() => _HouseMoneyState();
@@ -474,13 +530,23 @@ class _HouseMoneyState extends State<HouseMoney> {
   TextEditingController paymentMethod = TextEditingController();
   TextEditingController checkCode = TextEditingController();
   PayData payData = PayData();
+  var loginUser;
 
   @override
   void initState() {
     electricityType = TextEditingController();
     paymentMethod = TextEditingController();
     checkCode = TextEditingController();
+    getUser();
     super.initState();
+  }
+
+  void getUser() async {
+    final user = await FirebaseAuth.instance.currentUser();
+    if (user != null) {
+      loginUser = user.email;
+      print(loginUser);
+    }
   }
 
   void creditCard(BuildContext context) {
@@ -496,7 +562,7 @@ class _HouseMoneyState extends State<HouseMoney> {
               )),
               elevation: 4,
               content: Text(
-                  '房東天堂採用藍新金流交易系統,消費者刷卡時直接在銀行端系統中交易,房東天堂不會留下您的信用卡資料,以保障您的權益,資料傳輸過程採用嚴密的SSL2048bit加密技術保護'));
+                  '房東天堂採用藍新金流交易系統,消費者刷卡時直接在銀行端系統中交易,房東天堂不會留下您的信用卡資料,以保障您的權益,資料傳輸過程採用嚴密的AES-CBC256加密技術以及SHA256加密技術保護'));
         });
   }
 
@@ -529,73 +595,152 @@ class _HouseMoneyState extends State<HouseMoney> {
                   widget.type == "房租(含水電費)" ||
                   widget.type == "房租(含水費)" ||
                   widget.type == "房租(含電費)") {
-                if (payData.payTypeView == '信用卡' &&
-                    cardNumber != '' &&
-                    expiryDate != '' &&
-                    cardHolderName != '' &&
-                    cvvCode != '') {
-                  print('a123');
+                if (payData.payTypeView == '信用卡' && check) {
+                  Navigator.pop(context);
+
+                  HttpPost().postData(
+                      'ItemDesc=${widget.type}&',
+                      'CREDIT=1',
+                      "Email=$loginUser&",
+                      "Amt=${(1.028 * int.parse(widget.price)).round()}&",
+                      'MerchantOrderNo=A01${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&',
+                      widget.eleMoney,
+                      widget.waterMoney,
+                      "${int.parse(widget.price) - int.parse(widget.eleMoney) - int.parse(widget.waterMoney)}");
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Paying(
+                                merchantOrderNo:
+                                    'A01${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}',
+                                type: widget.type,
+                                price: int.parse(widget.price),
+                                waterMoney: widget.waterMoney,
+                                eleMoney: widget.eleMoney,
+                                payType: '信用卡',
+                              )));
                 } else if (payData.payTypeView == 'ATM') {
                   Navigator.pop(context);
+                  HttpPost().postData(
+                      'ItemDesc=${widget.type}&',
+                      'VACC=1',
+                      "Email=$loginUser&",
+                      "Amt=${int.parse('20') + int.parse(widget.price)}&",
+                      'MerchantOrderNo=A01${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&',
+                      widget.eleMoney,
+                      widget.waterMoney,
+                      "${int.parse(widget.price) - int.parse(widget.eleMoney) - int.parse(widget.waterMoney)}");
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ATMPayIng(
-                                price: int.parse(widget.price),
+                          builder: (context) => Paying(
+                                merchantOrderNo:
+                                    'A01${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}',
                                 type: widget.type,
-                                eleMoney: widget.eleMoney,
+                                price: int.parse(widget.price),
                                 waterMoney: widget.waterMoney,
+                                eleMoney: widget.eleMoney,
+                                payType: "ATM",
                               )));
-                  print('www');
                 } else if (payData.payTypeView == '超商繳費') {
-                  print(widget.type);
                   Navigator.pop(context);
+                  HttpPost().postData(
+                      'ItemDesc=${widget.type}&',
+                      'CVS=1',
+                      "Email=$loginUser&",
+                      "Amt=${int.parse('28') + int.parse(widget.price)}&",
+                      'MerchantOrderNo=A01${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&',
+                      widget.eleMoney,
+                      widget.waterMoney,
+                      "${int.parse(widget.price) - int.parse(widget.eleMoney) - int.parse(widget.waterMoney)}");
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => SuperMerchantPayment(
-                                price: int.parse(widget.price),
+                          builder: (context) => Paying(
+                                merchantOrderNo:
+                                    'A01${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}',
                                 type: widget.type,
-                                eleMoney: widget.eleMoney,
+                                price: int.parse(widget.price),
                                 waterMoney: widget.waterMoney,
+                                eleMoney: widget.eleMoney,
+                                payType: '超商繳費',
                               )));
-                  print('qqq');
                 }
               } else {
-                if (payData.payTypeView == '信用卡' &&
-                    cardNumber != '' &&
-                    expiryDate != '' &&
-                    cardHolderName != '' &&
-                    cvvCode != '') {
-                  print('asd');
+                if (payData.payTypeView == '信用卡' && check) {
+                  Navigator.pop(context);
+                  HttpPost().postData(
+                      'ItemDesc=${widget.type}&',
+                      'CREDIT=1',
+                      "Email=$loginUser&",
+                      "Amt=${(1.028 * int.parse(electricityType.text == '' ? '0' : electricityType.text)).round()}&",
+                      'MerchantOrderNo=A03${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&',
+                      '0',
+                      '0',
+                      "0");
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Paying(
+                                merchantOrderNo:
+                                    'A03${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}',
+                                type: widget.type,
+                                totalPrice: int.parse(electricityType.text),
+                                waterMoney: widget.waterMoney,
+                                eleMoney: widget.eleMoney,
+                                buyNum: int.parse(electricityType.text),
+                                payType: '信用卡',
+                              )));
                 } else if (payData.payTypeView == 'ATM' &&
                     electricityType.text != '') {
                   Navigator.pop(context);
+                  HttpPost().postData(
+                      'ItemDesc=${widget.type}&',
+                      'VACC=1',
+                      "Email=$loginUser&",
+                      "Amt=${int.parse('20') + int.parse(electricityType.text)}&",
+                      'MerchantOrderNo=A03${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&',
+                      '0',
+                      '0',
+                      "0");
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ATMPayIng(
-                                price: int.parse(widget.price),
-                                totalPrice: int.parse(widget.price) *
-                                    int.parse(electricityType.text),
+                          builder: (context) => Paying(
+                                merchantOrderNo:
+                                    'A03${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}',
                                 type: widget.type,
+                                totalPrice: int.parse(electricityType.text),
+                                waterMoney: widget.waterMoney,
+                                eleMoney: widget.eleMoney,
                                 buyNum: int.parse(electricityType.text),
+                                payType: "ATM",
                               )));
-                  print('www');
                 } else if (payData.payTypeView == '超商繳費' &&
                     electricityType.text != '') {
                   Navigator.pop(context);
+                  HttpPost().postData(
+                      'ItemDesc=${widget.type}&',
+                      'CVS=1',
+                      "Email=$loginUser&",
+                      "Amt=${int.parse('28') + int.parse(electricityType.text)}&",
+                      'MerchantOrderNo=A03${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&',
+                      '0',
+                      '0',
+                      "0");
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => SuperMerchantPayment(
-                                price: int.parse(widget.price),
-                                totalPrice: int.parse(widget.price) *
-                                    int.parse(electricityType.text),
+                          builder: (context) => Paying(
+                                merchantOrderNo:
+                                    'A03${widget.phoneNUM}${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}',
                                 type: widget.type,
+                                totalPrice: int.parse(electricityType.text),
+                                waterMoney: widget.waterMoney,
+                                eleMoney: widget.eleMoney,
                                 buyNum: int.parse(electricityType.text),
+                                payType: '超商繳費',
                               )));
-                  print('qqq');
                 }
               }
             },
@@ -656,42 +801,6 @@ class _HouseMoneyState extends State<HouseMoney> {
                               ),
                             )),
                       ),
-//發票相關
-//                      Padding(
-//                        padding: EdgeInsets.all(8.0),
-//                        child: Container(
-//                            width: MediaQuery.of(context).size.width * 0.8,
-//                            child: InputDecorator(
-//                              decoration: InputDecoration(
-//                                icon: Icon(Icons.threesixty),
-//                                labelText: '付款資訊',
-//                              ),
-//                              // isEmpty: _group['color'] == Colors.black,
-//                              child: DropdownButtonHideUnderline(
-//                                child: DropdownButton(
-//                                  value: payData.data['付款資訊'],
-//                                  isDense: true,
-//                                  onChanged: (newValue) {
-//                                    setState(() {
-//                                      FocusScope.of(context)
-//                                          .requestFocus(FocusNode());
-//                                      payData.data['付款資訊'] = newValue;
-//                                      payData.paymentInformationView = newValue;
-//                                      print(payData.paymentInformationView);
-//                                    });
-//                                  },
-//                                  items: payData.paymentInformation
-//                                      .map((dynamic color) {
-//                                    return DropdownMenuItem(
-//                                      value: color['付款資訊'],
-//                                      child: Text(color['付款資訊']),
-//                                    );
-//                                  }).toList(),
-//                                ),
-//                              ),
-//                            )),
-//                      ),
-
                       payData.payTypeView == '信用卡'
                           ? Padding(
                               padding: const EdgeInsets.all(8.0),
@@ -714,26 +823,6 @@ class _HouseMoneyState extends State<HouseMoney> {
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  Column(
-                                    children: <Widget>[
-                                      Container(
-                                        width: 400,
-                                        child: CreditCardWidget(
-                                          cardNumber: cardNumber,
-                                          expiryDate: expiryDate,
-                                          cardHolderName: cardHolderName,
-                                          cvvCode: cvvCode,
-                                          showBackView: isCvvFocused,
-                                        ),
-                                      ),
-                                      SingleChildScrollView(
-                                        child: CreditCardForm(
-                                          onCreditCardModelChange:
-                                              onCreditCardModelChange,
-                                        ),
-                                      ),
-                                    ],
                                   ),
                                   Row(
                                     children: <Widget>[
@@ -926,10 +1015,68 @@ class _HouseMoneyState extends State<HouseMoney> {
                                 color: Colors.grey[400],
                               ),
                             ),
-                            Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 15, top: 10, bottom: 10),
-                                child: Text('總價:${int.parse(widget.price)}')),
+                            payData.payTypeView == '超商繳費'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 15, top: 10, bottom: 10),
+                                    child: Text('手續費: 28'),
+                                  )
+                                : payData.payTypeView == 'ATM'
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 15, top: 10, bottom: 10),
+                                        child: Text('手續費: 20'),
+                                      )
+                                    : payData.payTypeView == '信用卡'
+                                        ? Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 15, top: 10, bottom: 10),
+                                            child: Text('手續費: 2.8%'),
+                                          )
+                                        : Container(),
+                            payData.payTypeView == '超商繳費'
+                                ? SizedBox(
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 1,
+                                      color: Colors.grey[400],
+                                    ),
+                                  )
+                                : payData.payTypeView == 'ATM'
+                                    ? SizedBox(
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 1,
+                                          color: Colors.grey[400],
+                                        ),
+                                      )
+                                    : Container(),
+                            payData.payTypeView == '超商繳費'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 15, top: 10, bottom: 10),
+                                    child: Text(
+                                        '應付金額:${int.parse('28') + int.parse(widget.price)}'),
+                                  )
+                                : payData.payTypeView == 'ATM'
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 15, top: 10, bottom: 10),
+                                        child: Text(
+                                            '應付金額:${int.parse('20') + int.parse(widget.price)}'),
+                                      )
+                                    : payData.payTypeView == '信用卡'
+                                        ? Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 15, top: 10, bottom: 10),
+                                            child: Text(
+                                                '應付金額:${(1.028 * int.parse(widget.price == '' ? '0' : widget.price)).round()}'))
+                                        : Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 15, top: 10, bottom: 10),
+                                            child:
+                                                Text(" 應付金額: ${widget.price}"),
+                                          ),
                           ],
                         ),
                       ),
@@ -949,14 +1096,14 @@ class _HouseMoneyState extends State<HouseMoney> {
                     children: <Widget>[
                       Padding(
                         padding: const EdgeInsets.all(20),
-                        child: Text('請輸入想要儲值度數'),
+                        child: Text('請輸入想要儲值金額'),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(20),
                         child: TextField(
                           controller: electricityType,
                           decoration: InputDecoration(
-                              hintText: '請輸入購買度數',
+                              hintText: '請輸入金額',
                               labelText: widget.type,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
@@ -1002,42 +1149,6 @@ class _HouseMoneyState extends State<HouseMoney> {
                               ),
                             )),
                       ),
-//發票相關
-//                      Padding(
-//                        padding: EdgeInsets.all(8.0),
-//                        child: Container(
-//                            width: MediaQuery.of(context).size.width * 0.8,
-//                            child: InputDecorator(
-//                              decoration: InputDecoration(
-//                                icon: Icon(Icons.threesixty),
-//                                labelText: '付款資訊',
-//                              ),
-//                              // isEmpty: _group['color'] == Colors.black,
-//                              child: DropdownButtonHideUnderline(
-//                                child: DropdownButton(
-//                                  value: payData.data['付款資訊'],
-//                                  isDense: true,
-//                                  onChanged: (newValue) {
-//                                    setState(() {
-//                                      FocusScope.of(context)
-//                                          .requestFocus(FocusNode());
-//                                      payData.data['付款資訊'] = newValue;
-//                                      payData.paymentInformationView = newValue;
-//                                      print(payData.paymentInformationView);
-//                                    });
-//                                  },
-//                                  items: payData.paymentInformation
-//                                      .map((dynamic color) {
-//                                    return DropdownMenuItem(
-//                                      value: color['付款資訊'],
-//                                      child: Text(color['付款資訊']),
-//                                    );
-//                                  }).toList(),
-//                                ),
-//                              ),
-//                            )),
-//                      ),
-
                       payData.payTypeView == '信用卡'
                           ? Padding(
                               padding: const EdgeInsets.all(8.0),
@@ -1060,26 +1171,6 @@ class _HouseMoneyState extends State<HouseMoney> {
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  Column(
-                                    children: <Widget>[
-                                      Container(
-                                        width: 400,
-                                        child: CreditCardWidget(
-                                          cardNumber: cardNumber,
-                                          expiryDate: expiryDate,
-                                          cardHolderName: cardHolderName,
-                                          cvvCode: cvvCode,
-                                          showBackView: isCvvFocused,
-                                        ),
-                                      ),
-                                      SingleChildScrollView(
-                                        child: CreditCardForm(
-                                          onCreditCardModelChange:
-                                              onCreditCardModelChange,
-                                        ),
-                                      ),
-                                    ],
                                   ),
                                   Row(
                                     children: <Widget>[
@@ -1251,7 +1342,7 @@ class _HouseMoneyState extends State<HouseMoney> {
                             Padding(
                               padding: const EdgeInsets.only(
                                   left: 15, top: 10, bottom: 10),
-                              child: Text('購買項目:${widget.type}'),
+                              child: Text('購買項目:${widget.type}預儲值'),
                             ),
                             SizedBox(
                               child: Container(
@@ -1263,7 +1354,7 @@ class _HouseMoneyState extends State<HouseMoney> {
                             Padding(
                               padding: const EdgeInsets.only(
                                   left: 15, top: 10, bottom: 10),
-                              child: Text('購買度數:${electricityType.text}'),
+                              child: Text('儲值金額:${electricityType.text}'),
                             ),
                             SizedBox(
                               child: Container(
@@ -1275,8 +1366,20 @@ class _HouseMoneyState extends State<HouseMoney> {
                             Padding(
                               padding: const EdgeInsets.only(
                                   left: 15, top: 10, bottom: 10),
-                              child:
-                                  Text('每度價格:${int.parse(widget.price) * 1}'),
+                              child: Row(
+                                children: <Widget>[
+                                  Text('預估每度價格:${int.parse(widget.price) * 1}'),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 10),
+                                    child: Text(
+                                      '(非夏季電費與夏季電費會有差別)',
+                                      style: TextStyle(
+                                          fontSize: Adapt.px(20),
+                                          color: Colors.grey),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             SizedBox(
                               child: Container(
@@ -1285,12 +1388,71 @@ class _HouseMoneyState extends State<HouseMoney> {
                                 color: Colors.grey[400],
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  left: 15, top: 10, bottom: 10),
-                              child: Text(
-                                  '總價:${int.parse(widget.price) * int.parse(electricityType.text == '' ? '0' : electricityType.text)}'),
-                            ),
+                            payData.payTypeView == '超商繳費'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 15, top: 10, bottom: 10),
+                                    child: Text('手續費: 28'),
+                                  )
+                                : payData.payTypeView == 'ATM'
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 15, top: 10, bottom: 10),
+                                        child: Text('手續費: 20'),
+                                      )
+                                    : payData.payTypeView == '信用卡'
+                                        ? Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 15, top: 10, bottom: 10),
+                                            child: Text('手續費: 2.8%'),
+                                          )
+                                        : Container(),
+                            payData.payTypeView == '超商繳費'
+                                ? SizedBox(
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 1,
+                                      color: Colors.grey[400],
+                                    ),
+                                  )
+                                : payData.payTypeView == 'ATM'
+                                    ? SizedBox(
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 1,
+                                          color: Colors.grey[400],
+                                        ),
+                                      )
+                                    : Container(),
+                            payData.payTypeView == '超商繳費'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 15, top: 10, bottom: 10),
+                                    child: Text(
+                                        '應付金額:${int.parse('28') + int.parse(electricityType.text == '' ? '0' : electricityType.text)}'),
+                                  )
+                                : payData.payTypeView == 'ATM'
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 15, top: 10, bottom: 10),
+                                        child: Text(
+                                            '應付金額:${int.parse('20') + int.parse(electricityType.text == '' ? '0' : electricityType.text)}'),
+                                      )
+                                    : payData.payTypeView == '信用卡'
+                                        ? Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 15, top: 10, bottom: 10),
+                                            child: Text(
+                                                '應付金額:${(1.028 * int.parse(electricityType.text == '' ? '0' : electricityType.text)).round()}'),
+                                          )
+                                        : Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 15, top: 10, bottom: 10),
+                                            child: Text(electricityType.text ==
+                                                    ''
+                                                ? " 應付金額:'0'"
+                                                : " 應付金額: ${electricityType.text}"),
+                                          ),
                           ],
                         ),
                       ),
@@ -1299,39 +1461,6 @@ class _HouseMoneyState extends State<HouseMoney> {
                 ),
               ),
             ),
-    );
-  }
-}
-
-class Http extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: WebviewScaffold(
-        url: 'https://www.google.com/',
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-          ),
-          centerTitle: true,
-          backgroundColor: AppConstants.tenantAppBarAndFontColor,
-          title: const Text('付款頁面'),
-        ),
-        withZoom: true,
-        withLocalStorage: true,
-        hidden: true,
-        ignoreSSLErrors: false,
-        initialChild: Container(
-          color: AppConstants.tenantBackColor,
-          child: const Center(
-            child: Text('請稍等.....'),
-          ),
-        ),
-      ),
     );
   }
 }

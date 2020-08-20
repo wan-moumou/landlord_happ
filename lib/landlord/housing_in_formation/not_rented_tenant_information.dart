@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:landlord_happy/app_const/Adapt.dart';
@@ -6,7 +5,6 @@ import 'package:landlord_happy/app_const/Widgets.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
 
 import 'preview.dart';
-
 
 class NotRentedTenantInformation extends StatefulWidget {
   static final String routeName = '/TenantInformation';
@@ -54,15 +52,19 @@ class NotRentedTenantInformation extends StatefulWidget {
   final bool preservation;
   final bool fingerprintPasswordLock;
   final bool fixed;
+  final bool noHasGatewayFixd;
   final String houseName;
   final String otherFacilities;
+  final String summerElectricityMoney;
 
   NotRentedTenantInformation(
       {this.index,
       this.address,
       this.houseMoney,
       this.otherFacilities,
+      this.summerElectricityMoney,
       this.fixed,
+      this.noHasGatewayFixd,
       this.managementFee,
       this.gasFee,
       this.internetFee,
@@ -144,7 +146,8 @@ class _NotRentedTenantInformationState
         ),
         body: TabBarView(children: <Widget>[
           NotRentedTenantInformation1(
-            otherFacilities:widget.otherFacilities,
+            otherFacilities: widget.otherFacilities,
+            summerElectricityMoney: widget.summerElectricityMoney,
             index: widget.index,
             address: widget.address,
             houseMoney: widget.houseMoney,
@@ -188,6 +191,7 @@ class _NotRentedTenantInformationState
             gender: widget.gender,
             smoke: widget.smoke,
             fixed: widget.fixed,
+            noHasGatewayFixd: widget.noHasGatewayFixd,
           ),
           NotRentedTenantInformation2(
             index: widget.index,
@@ -218,6 +222,7 @@ class NotRentedTenantInformation1 extends StatelessWidget {
   final String smoke;
   final String party;
   final String otherFacilities;
+  final String summerElectricityMoney;
   final bool tvTable;
   final bool diningTable;
   final bool shoeBox;
@@ -247,13 +252,15 @@ class NotRentedTenantInformation1 extends StatelessWidget {
   final bool preservation;
   final bool fingerprintPasswordLock;
   final bool fixed;
+  final bool noHasGatewayFixd;
 
   NotRentedTenantInformation1(
       {this.index,
       this.address,
       this.houseMoney,
       this.fixed,
-
+      this.noHasGatewayFixd,
+      this.summerElectricityMoney,
       this.managementFee,
       this.otherFacilities,
       this.gasFee,
@@ -379,11 +386,13 @@ class NotRentedTenantInformation1 extends StatelessWidget {
                 ),
                 HouseData(
                   title: '水費',
-                  detail:'水費:$waterMoney/月',
+                  detail: '水費:$waterMoney/月',
                 ),
                 HouseData(
                   title: '電費',
-                  detail: fixed?'電費:$electricityMoney/度':'電費:$electricityMoney/月',
+                  detail: noHasGatewayFixd
+                      ? '非夏季電費:$electricityMoney/度\n夏季電費:$summerElectricityMoney/度'
+                      : '非夏季電費:$electricityMoney/月\n夏季電費:$summerElectricityMoney/月',
                   backColor: AppConstants.backColor,
                 ),
                 HouseIcon(
@@ -460,10 +469,7 @@ class NotRentedTenantInformation1 extends StatelessWidget {
                             have: bedside,
                             title: '床頭組',
                           ),
-                          IconData(
-                            have: wardrobe,
-                            title: '衣櫃',
-                          ),
+
                         ],
                       ),
                     ),
@@ -497,6 +503,10 @@ class NotRentedTenantInformation1 extends StatelessWidget {
                           IconData(
                             have: locker,
                             title: '置物櫃',
+                          ),
+                          IconData(
+                            have: wardrobe,
+                            title: '衣櫃',
                           ),
                         ],
                       ),
@@ -538,10 +548,7 @@ class NotRentedTenantInformation1 extends StatelessWidget {
                             have: wifi,
                             title: 'WIFI',
                           ),
-                          IconData(
-                            have: refrigerator,
-                            title: '冰箱',
-                          ),
+
                           IconData(
                             have: washingMachine,
                             title: '洗衣機',
@@ -618,14 +625,19 @@ class NotRentedTenantInformation1 extends StatelessWidget {
                             have: fingerprintPasswordLock,
                             title: '指紋密碼鎖',
                           ),
+                          IconData(
+                            have: refrigerator,
+                            title: '冰箱',
+                          ),
                         ],
                       ),
                     ),
+
                   ],
                 ),
                 HouseData(
                   title: '附加設施',
-                  detail: otherFacilities==null?'無':otherFacilities,
+                  detail: otherFacilities == null ? '無' : otherFacilities,
                   backColor: AppConstants.backColor,
                 ),
               ],
@@ -656,7 +668,7 @@ class IconData extends StatelessWidget {
             ),
             Text(
               '$title',
-          style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12),
               maxLines: 2,
             )
           ],
@@ -687,10 +699,10 @@ class HouseData extends StatelessWidget {
             child: Text(
               '$title :',
               style: TextStyle(fontSize: Adapt.px(30), color: Colors.grey[600]),
-              
             ),
           ),
-          Expanded(flex: 3,
+          Expanded(
+            flex: 3,
             child: Text(
               '$detail',
               maxLines: 2,
@@ -778,6 +790,7 @@ class _NotRentedTenantInformation3State
     extends State<NotRentedTenantInformation3> {
   bool day = true;
   bool userName = true;
+
   @override
   Widget build(BuildContext context) {
     return Container(

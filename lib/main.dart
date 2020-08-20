@@ -6,13 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info/package_info.dart';
 
-
 import 'landlord/guestHomePage.dart';
-import 'landlord/home/income_and_expenses.dart';
+import 'landlord/home/income.dart';
 import 'tenant/home_tenant/tenant_income_and_expenses.dart';
 import 'login.dart';
 import 'tenant/tenant_guest_home_page.dart';
-
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,17 +26,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        backgroundColor: Colors.white
-      ),
+          primarySwatch: Colors.blue,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          backgroundColor: Colors.white),
       home: MyHomePage(),
       routes: {
         LoginPage.routeName: (context) => LoginPage(),
         GuestHomePage.routeName: (context) => GuestHomePage(),
-        TenantIncomeAndExpenses.routeName: (context) => TenantIncomeAndExpenses(),
+        TenantIncomeAndExpenses.routeName: (context) =>
+            TenantIncomeAndExpenses(),
         TenantGuestHomePage.routeName: (context) => TenantGuestHomePage(),
-        IncomeAndExpenses.routeName:(context)=>IncomeAndExpenses(),
+        Income.routeName: (context) => Income(),
       },
     );
   }
@@ -52,24 +50,33 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   String appVesion = "0.0.0";
+
   Future fetchAppVersion() async {
     PackageInfo pacakgeInfo = await PackageInfo.fromPlatform();
     setState(() {
       appVesion = pacakgeInfo.version;
     });
   }
+
   @override
   void initState() {
     fetchAppVersion();
     getVersion();
     Timer(Duration(seconds: 6), () {
       Navigator.popAndPushNamed(context, LoginPage.routeName);
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>LoginPage(data: data,intnetVersion: intnetVersion,appVesion: appVesion,)));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => LoginPage(
+                  data: data,
+                  intnetVersion: intnetVersion,
+                  appVesion: appVesion,
+                  updeta: updeta)));
     });
     super.initState();
   }
+
   var _flatform;
 
   Map data = {};
@@ -105,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
         upDataContext4 = f['更新內容四'];
         data.addAll({
           'content':
-          '更新內容:\n$upDataContext1\n$upDataContext2\n$upDataContext3\n$upDataContext4',
+              '更新內容:\n$upDataContext1\n$upDataContext2\n$upDataContext3\n$upDataContext4',
         });
         updeta = f['強制更新'];
         updetaUrl = f['更新網址'];
@@ -124,7 +131,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(backgroundColor: Colors.white,
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         //
         child: Column(

@@ -6,20 +6,23 @@ import 'package:flutter/material.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class IncomeAndExpenses extends StatefulWidget {
+import 'expenses.dart';
+
+class Income extends StatefulWidget {
   static final String routeName = '/IncomeAndExpenses';
 
   @override
-  _IncomeAndExpensesState createState() => _IncomeAndExpensesState();
+  _IncomeState createState() => _IncomeState();
 }
 
-class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
+class _IncomeState extends State<Income> {
   bool day = false;
   bool userName = true;
   String loginUser = '';
   int items = 0;
   final _auth = FirebaseAuth.instance;
   List<String> buyTime = [];
+  List<String> buyType = [];
 
   List<String> roomName = [];
 
@@ -36,6 +39,91 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
 
   bool upData;
 
+  void resume(BuildContext context,int index) {
+
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('詳細資料'),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(
+              Radius.circular(10),
+            )),
+            elevation: 4,
+            content: StatefulBuilder(builder: (context, StateSetter setState) {
+              return Container(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            '日期:',
+                          ),
+                          Text(
+                            '${buyTime[index]}',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            '房間名稱:',
+                          ),
+                          Text(
+                            '${roomName[index]}',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            '房客名稱:',
+                          ),
+                          Text(
+                            '${tenantName[index]}',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            '金額:',
+                          ),
+                          Text(
+                            '${money[index]}元',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            '類型:',
+                          ),
+                          Text(
+                            '${type[index]}',
+                          ),
+                        ],
+                      ), Row(
+                        children: <Widget>[
+                          Text(
+                            '支付方式:',
+                          ),
+                          Text(
+                            '${buyType[index]}',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          );
+        });
+  }
+
   Future getData() async {
     final user = await _auth.currentUser();
     if (user != null) {
@@ -48,7 +136,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
           .collection("/房東/帳號資料/$loginUser")
           .document('帳務資料')
           .get()
-          .then((value) => upData = value['詳細資料更新']);
+          .then((value) => upData = value['詳細收入資料更新']);
       if (upData) {
         final pieHomeMoneyData = await Firestore.instance
             .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月')
@@ -56,59 +144,62 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
         for (var data in pieHomeMoneyData.documents) {
           buyTime.add(data.data['購買時間']);
           print(buyTime);
-          savePieData('購買時間', buyTime);
+          savePieData('收入購買時間', buyTime);
         }
         for (var data in pieHomeMoneyData.documents) {
           roomName.add(data.data['房間名稱']);
           print(roomName);
-          savePieData('房間名稱', roomName);
+          savePieData('收入房間名稱', roomName);
         }
         for (var data in pieHomeMoneyData.documents) {
           tenantName.add(data.data['付款人']);
           print(tenantName);
-          savePieData('付款人', tenantName);
+          savePieData('收入付款人', tenantName);
         }
         for (var data in pieHomeMoneyData.documents) {
           money.add(data.data['總價']);
           print(money);
-          savePieData('金額', money);
+          savePieData('收入金額', money);
         }
         for (var data in pieHomeMoneyData.documents) {
           type.add(data.data['類型']);
           print(type);
-          savePieData('購買類型', type);
+          savePieData('收入購買類型', type);
+        }
+        for (var data in pieHomeMoneyData.documents) {
+          buyType.add(data.data['藍新金流支付方式']);
+          print(buyType);
+          savePieData('收入藍新金流支付方式', buyType);
         }
       }
       await Firestore.instance
           .collection("/房東/帳號資料/$loginUser")
           .document('帳務資料')
-          .updateData({'詳細資料更新': false});
+          .updateData({'詳細收入資料更新': false});
       await getBuyTimeData();
       await getMoneyData();
       await getRoomNameData();
+      await getBuyTypeData();
       await getTenantNameData();
       await getTypeData();
       scrollMsgBottom(100);
-      setState(() {
-
-      });
+      setState(() {});
     } else {
       await getBuyTimeData();
       await getMoneyData();
       await getRoomNameData();
+      await getBuyTypeData();
       await getTenantNameData();
       await getTypeData();
       scrollMsgBottom(100);
-      setState(() {
-
-      });
+      setState(() {});
     }
   }
 
   Future getBuyTimeData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('購買時間');
+    userName = prefs.getStringList('收入購買時間');
 
     if (userName != null) {
       return buyTime = userName;
@@ -118,7 +209,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
   Future getRoomNameData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('房間名稱');
+    userName = prefs.getStringList('收入房間名稱');
 
     if (userName != null) {
       return roomName = userName;
@@ -128,7 +219,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
   Future getTenantNameData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('付款人');
+    userName = prefs.getStringList('收入付款人');
 
     if (userName != null) {
       return tenantName = userName;
@@ -138,7 +229,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
   Future getMoneyData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('金額');
+    userName = prefs.getStringList('收入金額');
 
     if (userName != null) {
       return money = userName;
@@ -148,10 +239,18 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
   Future getTypeData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getStringList('購買類型');
+    userName = prefs.getStringList('收入購買類型');
 
     if (userName != null) {
       return type = userName;
+    }
+  } Future getBuyTypeData() async {
+    var userName;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userName = prefs.getStringList('收入藍新金流支付方式');
+
+    if (userName != null) {
+      return buyType = userName;
     }
   }
 
@@ -179,8 +278,19 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actions: <Widget>[
+          FlatButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => Expenses()));
+              },
+              child: Text(
+                '查看支出',
+                style: TextStyle(color: Colors.white),
+              ))
+        ],
         backgroundColor: AppConstants.appBarAndFontColor,
-        title: Text('帳務收支明細'),
+        title: Text('帳務收入明細'),
         centerTitle: true,
       ),
       body: Card(
@@ -209,9 +319,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
                         ],
                       )),
                 ),
-                Expanded(flex: 2, child: Text('房間名')),
-                Expanded(flex: 2, child: Text('房客名')),
-                Expanded(flex: 2, child: Text('價格')),
+                Expanded(flex: 2, child: Text('金額')),
                 Expanded(flex: 2, child: Text('類型')),
               ],
             ),
@@ -232,7 +340,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
                               height: MediaQuery.of(context).size.height / 10,
                               child: OutlineButton(
                                 splashColor: Colors.blueGrey[100],
-                                onPressed: () {},
+                                onPressed: () {resume(context,index);},
                                 child: Card(
                                   margin: EdgeInsets.all(0.0),
                                   elevation: 0.0,
@@ -246,15 +354,7 @@ class _IncomeAndExpensesState extends State<IncomeAndExpenses> {
                                           flex: 3, child: Text(buyTime[index])),
                                       Expanded(
                                         flex: 2,
-                                        child: Text(roomName[index]),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(tenantName[index]),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(money[index]),
+                                        child: Text("${money[index]}元"),
                                       ),
                                       Expanded(
                                         flex: 2,

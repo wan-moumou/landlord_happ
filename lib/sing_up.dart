@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:oktoast/oktoast.dart';
 
 import 'app_const/Adapt.dart';
 import 'app_const/app_const.dart';
@@ -68,6 +71,59 @@ class _SignUpPageState extends State<SignUpPage> {
     Navigator.pop(context);
   }
 
+  void showBottomSheet(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            alignment: Alignment.center,
+            height: MediaQuery.of(context).size.height * .1,
+            child: Text(
+              '註冊超時',
+              style: TextStyle(fontSize: Adapt.px(50), color: Colors.red),
+            ),
+          );
+        });
+  }
+
+  Future tenantRegistered() async {
+    await _firestore
+        .collection('房客')
+        .document("帳號資料")
+        .collection(emailController.text)
+        .document('資料')
+        .setData({
+      'name': firstNameController.text,
+      '帳號': emailController.text,
+      '密碼': passwordController.text,
+      '手機號碼': phoneNumberController.text,
+      '地址': addressController.text,
+      'url': " ",
+      '房東姓名': '',
+      '剩餘金額': '0',
+      '房屋名稱': '',
+      '簽約日期': '',
+      '門鎖密碼': '',
+      '出租中': false,
+      '更新': true
+    });
+    await _firestore
+        .collection('/房客/帳號資料/${emailController.text}')
+        .document('帳務資料')
+        .setData({
+      '帳務更新': true,
+      '詳細資料更新': true,
+    });
+    await _firestore
+        .collection('/房客/帳號資料/${emailController.text}/資料/合約')
+        .document('合約')
+        .setData({});
+    await _firestore
+        .collection('/房客/帳號資料/${emailController.text}/資料/合約')
+        .document('簽名')
+        .setData({});
+  }
+
   bool inAsyncCall = false;
 
   @override
@@ -118,14 +174,18 @@ class _SignUpPageState extends State<SignUpPage> {
                               key: _formKey,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Container(height: Adapt.px(100),
+                                child: Container(
+                                  height: Adapt.px(100),
                                   child: SignUpTextField(
+                                    obscureText:false,
                                     whoMaI: widget.whoMaI,
                                     function: (v) {
-                                      if (firstNameController.text.length >= 5) {
+                                      if (firstNameController.text.length >=
+                                          5) {
                                         goToMyPageKey = false;
                                         return '輸入正確姓名';
-                                      } else if (firstNameController.text.length <=
+                                      } else if (firstNameController
+                                              .text.length <=
                                           2) {
                                         goToMyPageKey = false;
                                         return '長度必須大於２';
@@ -143,8 +203,10 @@ class _SignUpPageState extends State<SignUpPage> {
                               key: _formKey1,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Container(height: Adapt.px(100),
+                                child: Container(
+                                  height: Adapt.px(100),
                                   child: SignUpTextField(
+                                    obscureText:false,
                                     whoMaI: widget.whoMaI,
                                     function: (value) {
                                       if (emailController.text.contains('@')) {
@@ -165,8 +227,10 @@ class _SignUpPageState extends State<SignUpPage> {
                               key: _formKey2,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Container(height: Adapt.px(100),
+                                child: Container(
+                                  height: Adapt.px(100),
                                   child: SignUpTextField(
+                                    obscureText:true,
                                     whoMaI: widget.whoMaI,
                                     function: (value) {
                                       if (passwordController.text.length >= 6) {
@@ -187,8 +251,10 @@ class _SignUpPageState extends State<SignUpPage> {
                               key: _formKey3,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Container(height: Adapt.px(100),
+                                child: Container(
+                                  height: Adapt.px(100),
                                   child: SignUpTextField(
+                                    obscureText:true,
                                     whoMaI: widget.whoMaI,
                                     function: (value) {
                                       if (passwordController.text ==
@@ -210,17 +276,21 @@ class _SignUpPageState extends State<SignUpPage> {
                               key: _formKey4,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Container(height: Adapt.px(100),
+                                child: Container(
+                                  height: Adapt.px(100),
                                   child: SignUpTextField(
+                                    obscureText:false,
                                     whoMaI: widget.whoMaI,
                                     function: (value) {
-                                      if (phoneNumberController.text.length < 10) {
+                                      if (phoneNumberController.text.length <
+                                          10) {
                                         goToMyPageKey = false;
                                         return '請輸入正確手機號碼';
                                       } else if (phoneNumberController.text
                                                   .indexOf('0') ==
                                               0 &&
-                                          phoneNumberController.text.length == 10) {
+                                          phoneNumberController.text.length ==
+                                              10) {
                                         goToMyPageKey = true;
                                         return null;
                                       } else {
@@ -238,11 +308,14 @@ class _SignUpPageState extends State<SignUpPage> {
                               key: _formKey5,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Container(height: Adapt.px(100),
+                                child: Container(
+                                  height: Adapt.px(100),
                                   child: SignUpTextField(
+                                    obscureText:false,
                                     whoMaI: widget.whoMaI,
                                     function: (value) {
-                                      if (addressController.text.contains('@') ||
+                                      if (addressController.text
+                                              .contains('@') ||
                                           addressController.text.length < 7) {
                                         goToMyPageKey = false;
                                         return '請輸入完整地址';
@@ -312,6 +385,15 @@ class _SignUpPageState extends State<SignUpPage> {
                                           })
                                         : null;
                                     if (goToMyPageKey == true) {
+                                      Timer(Duration(seconds: 8), () {
+                                        showBottomSheet(context);
+                                        Timer(Duration(seconds: 1), () {
+                                          setState(() {
+                                            inAsyncCall = false;
+                                          });
+                                          Navigator.pop(context);
+                                        });
+                                      });
                                       final newUser = await _auth
                                           .createUserWithEmailAndPassword(
                                               email: emailController.text,
@@ -335,7 +417,8 @@ class _SignUpPageState extends State<SignUpPage> {
                                                 '地址': addressController.text,
                                                 'url': " ",
                                                 '門鎖密碼': " ",
-                                                '更新':true
+                                                '剩餘點數': '0',
+                                                '更新': true
                                               }),
                                               await _firestore
                                                   .collection(
@@ -343,38 +426,17 @@ class _SignUpPageState extends State<SignUpPage> {
                                                   .document('帳務資料')
                                                   .setData({
                                                 '帳務更新': true,
-                                                '詳細資料更新': true,
+                                                '詳細支出資料更新': true,
+                                                '詳細收入資料更新': true,
+                                              }),
+                                              await _firestore
+                                                  .collection(
+                                                  '房東/帳號資料/${emailController.text}/資料/合約')
+                                                  .document()
+                                                  .setData({
                                               })
                                             }
-                                          : await _firestore
-                                              .collection('房客')
-                                              .document("帳號資料")
-                                              .collection(emailController.text)
-                                              .document('資料')
-                                              .setData({
-                                              'name': firstNameController.text,
-                                              '帳號': emailController.text,
-                                              '密碼': passwordController.text,
-                                              '手機號碼':
-                                                  phoneNumberController.text,
-                                              '地址': addressController.text,
-                                              'url': " ",
-                                              '房東姓名': '',
-                                              '剩餘度數': '0',
-                                              '房屋名稱': '',
-                                              '簽約日期': '',
-                                              '門鎖密碼': '',
-                                              '出租中': false,
-                                        '更新':true
-                                            });
-                                      await _firestore
-                                          .collection(
-                                          '/房客/帳號資料/${emailController.text}')
-                                          .document('帳務資料')
-                                          .setData({
-                                        '帳務更新': true,
-                                        '詳細資料更新': true,
-                                      });
+                                          : await tenantRegistered();
 
                                       if (newUser != null) {
                                         firstNameController.clear();
@@ -433,13 +495,14 @@ class SignUpTextField extends StatefulWidget {
       this.controller,
       this.function,
       this.function2,
-      this.whoMaI})
+      this.whoMaI,this.obscureText})
       : super(key: key);
   final String labelText;
   final TextEditingController controller;
   final Function function;
   final Function function2;
   bool whoMaI;
+ final bool obscureText;
 
   @override
   _SignUpTextFieldState createState() => _SignUpTextFieldState();
@@ -451,6 +514,7 @@ class _SignUpTextFieldState extends State<SignUpTextField> {
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 15, right: 15, bottom: 0),
       child: TextFormField(
+        obscureText:widget.obscureText,
         onChanged: widget.function2,
         validator: widget.function,
         controller: widget.controller,

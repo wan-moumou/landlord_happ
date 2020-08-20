@@ -1,20 +1,14 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_icons/flutter_icons.dart';
-import 'package:http/http.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
 import 'package:landlord_happy/updata_page.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:oktoast/oktoast.dart';
-import 'package:package_info/package_info.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'app_const/Adapt.dart';
 import 'landlord/guestHomePage.dart';
 import 'sing_up.dart';
@@ -22,10 +16,14 @@ import 'tenant/tenant_guest_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   static final String routeName = '/loginPageRoute';
-final data;
-final intnetVersion;
-final appVesion;
-  LoginPage({Key key,this.data,this.intnetVersion,this.appVesion}) : super(key: key);
+  final data;
+  final intnetVersion;
+  final appVesion;
+  final updeta;
+
+  LoginPage(
+      {Key key, this.data, this.intnetVersion, this.appVesion, this.updeta})
+      : super(key: key);
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -49,6 +47,7 @@ class _LoginPageState extends State<LoginPage>
       setState(() {});
     });
   }
+
   Future<void> updateAlert(BuildContext context, Map data) async {
     bool isForceUpdate = data['isForceUpdate']; // 从数据拿到是否强制更新字段
 
@@ -69,12 +68,26 @@ class _LoginPageState extends State<LoginPage>
     });
   }
 
-
+  void showBottomSheet(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            alignment: Alignment.center,
+            height: MediaQuery.of(context).size.height * .1,
+            child: Text(
+              '帳號或密碼錯誤',
+              style: TextStyle(fontSize: Adapt.px(50), color: Colors.red),
+            ),
+          );
+        });
+  }
 
   @override
   void initState() {
-    if(widget.intnetVersion!=widget.appVesion){
-    updateAlert(context,widget.data);}
+    if (widget.intnetVersion != widget.appVesion) {
+      updateAlert(context, widget.data);
+    }
     final fbm = FirebaseMessaging();
     emailController = TextEditingController();
     passwordController = TextEditingController();
@@ -83,15 +96,8 @@ class _LoginPageState extends State<LoginPage>
     getEmail();
     getPassWord();
     getPassBool();
-
     animated();
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    animatedContainer.dispose();
-    super.dispose();
   }
 
   void _goToSignUp(bool whoMaI) {
@@ -105,14 +111,14 @@ class _LoginPageState extends State<LoginPage>
 
   void _goHomePage() {
     upLandlordData();
-    Navigator.popAndPushNamed(context, GuestHomePage.routeName);
 
+    Navigator.popAndPushNamed(context, GuestHomePage.routeName);
   }
 
   void _goToTenantLogIn() {
     upTenantData();
-    Navigator.popAndPushNamed(context, TenantGuestHomePage.routeName);
 
+    Navigator.popAndPushNamed(context, TenantGuestHomePage.routeName);
   }
 
   saveID() async {
@@ -134,6 +140,25 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
+  bool haveName ;
+
+  Future getName() async {
+    var userName;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userName = await prefs.getString('${emailController.text}姓名');
+    if (userName != null) {
+      setState(() {
+        haveName = true;
+        print(haveName);
+        print(userName);
+      });
+    }else{ setState(() {
+      haveName = false;
+      print(haveName);
+      print(userName);
+    });}
+  }
+
   Future getPassWord() async {
     var userPassWord;
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -143,7 +168,7 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
-  Future setPassWord() async {
+  Future setPassBool() async {
     var userPassWord;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     userPassWord = await prefs.setBool('保存密碼', savePassword);
@@ -153,7 +178,7 @@ class _LoginPageState extends State<LoginPage>
   Future getPassBool() async {
     var userPassWord;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userPassWord = await prefs.getBool('保存密碼');
+    userPassWord = prefs.getBool('保存密碼');
     if (userPassWord == null) {
       return savePassword = false;
     } else {
@@ -165,34 +190,44 @@ class _LoginPageState extends State<LoginPage>
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.remove('密碼');
   }
-void upTenantData()async{
-  await Firestore.instance
-      .collection('房客')
-      .document('帳號資料')
-      .collection(emailController.text)
-      .document('資料')
-      .updateData({'更新': true});
-  await Firestore.instance
-      .collection('房客')
-      .document('帳號資料')
-      .collection(emailController.text)
-      .document('帳務資料')
-      .updateData({'帳務更新': true,'詳細資料更新':true});
-}
-void upLandlordData()async{
-  await Firestore.instance
-      .collection('房東')
-      .document('帳號資料')
-      .collection(emailController.text)
-      .document('資料')
-      .updateData({'更新': true});
-  await Firestore.instance
-      .collection('房東')
-      .document('帳號資料')
-      .collection(emailController.text)
-      .document('帳務資料')
-      .updateData({'帳務更新': true,'詳細資料更新':true});
-}
+
+  void upTenantData() async {
+    await Firestore.instance
+        .collection('房客')
+        .document('帳號資料')
+        .collection(emailController.text)
+        .document('帳務資料')
+        .updateData({'帳務更新': true, '詳細資料更新': true});
+    print('開始更新');
+    if (haveName == false) {
+      await Firestore.instance
+          .collection('房客')
+          .document('帳號資料')
+          .collection(emailController.text)
+          .document('資料')
+          .updateData({'更新': true});
+    }
+
+  }
+
+  void upLandlordData() async {
+    await Firestore.instance
+        .collection('房東')
+        .document('帳號資料')
+        .collection(emailController.text)
+        .document('帳務資料')
+        .updateData({'帳務更新': true, '詳細支出資料更新': true, '詳細收入資料更新': true});
+    if (haveName == false) {
+      await Firestore.instance
+          .collection('房東')
+          .document('帳號資料')
+          .collection(emailController.text)
+          .document('資料')
+          .updateData({'更新': true});
+    }
+
+  }
+
   bool inAsyncCall = false;
   bool wohAmI = true;
   bool savePassword = false;
@@ -400,43 +435,83 @@ void upLandlordData()async{
                                 width: Adapt.px(620),
                                 child: MaterialButton(
                                   onPressed: () async {
-    if(widget.intnetVersion==widget.appVesion) {
-                                    FocusScope.of(context)
-                                        .requestFocus(FocusNode());
-                                    setState(() {
-                                      inAsyncCall = true;
-                                    });
-                                    try {
-                                      saveID();
+                                    if (widget.updeta) {
+                                      if (widget.intnetVersion ==
+                                          widget.appVesion) {
+                                        FocusScope.of(context)
+                                            .requestFocus(FocusNode());
+                                        setState(() {
+                                          inAsyncCall = true;
+                                        });
+                                        await getName();
+                                        await saveID();
+                                        savePassword
+                                            ? savePassWord()
+                                            : dlePassWord();
+
+                                        try {
+                                          savePassword
+                                              ? setPassBool()
+                                              : setPassBool();
+                                          final newLoginUser = await _auth
+                                              .signInWithEmailAndPassword(
+                                                  email: emailController.text,
+                                                  password:
+                                                      passwordController.text);
+
+                                          newLoginUser.user != null
+                                              ? wohAmI
+                                                  ? _goHomePage()
+                                                  : _goToTenantLogIn()
+                                              : print('123');
+                                        } catch (e) {
+                                          savePassword
+                                              ? setPassBool()
+                                              : setPassBool();
+                                          setState(() {
+                                            inAsyncCall = false;
+                                          });
+                                          showBottomSheet(context);
+                                        }
+                                      }
+                                    } else {
+                                      FocusScope.of(context)
+                                          .requestFocus(FocusNode());
+                                      setState(() {
+                                        inAsyncCall = true;
+                                      });
+                                      await getName();
+                                      await saveID();
                                       savePassword
                                           ? savePassWord()
                                           : dlePassWord();
-                                      savePassword
-                                          ? setPassWord()
-                                          : setPassWord();
-                                      final newLoginUser = await _auth
-                                          .signInWithEmailAndPassword(
-                                              email: emailController.text,
-                                              password:
-                                                  passwordController.text);
-                                      newLoginUser.user != null
-                                          ? wohAmI
-                                              ? _goHomePage()
-                                              : _goToTenantLogIn()
-                                          : null;
-                                    } catch (e) {
-                                      setState(() {
-                                        inAsyncCall = false;
-                                      });
-                                      showToastWidget(Text(
-                                        '帳號或密碼錯誤',
-                                        style: TextStyle(
-                                            fontSize: Adapt.px(30),
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold),
-                                      ));
+
+                                      try {
+                                        savePassword
+                                            ? setPassBool()
+                                            : setPassBool();
+                                        final newLoginUser = await _auth
+                                            .signInWithEmailAndPassword(
+                                                email: emailController.text,
+                                                password:
+                                                    passwordController.text);
+
+                                        newLoginUser.user != null
+                                            ? wohAmI
+                                                ? _goHomePage()
+                                                : _goToTenantLogIn()
+                                            : print('非強制更新');
+                                      } catch (e) {
+                                        savePassword
+                                            ? setPassBool()
+                                            : setPassBool();
+                                        setState(() {
+                                          inAsyncCall = false;
+                                        });
+                                        showBottomSheet(context);
+                                      }
                                     }
-                                  }},
+                                  },
                                   child: Text(
                                     wohAmI ? '房東登入' : '房客登入',
                                     maxLines: 1,

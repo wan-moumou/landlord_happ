@@ -163,7 +163,7 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
 
                     return Container(
                       color: AppConstants.backColor,
-                      height: MediaQuery.of(context).size.height * 0.73,
+                      height: MediaQuery.of(context).size.height * 0.8,
                       width: MediaQuery.of(context).size.width * 1,
                       child: GridView.builder(
                           shrinkWrap: true,
@@ -243,6 +243,8 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                               area: data[index].data['樓層資訊']['房屋面積'],
                               houseTypeValues: data[index].data['房間位置與類型']
                                   ['建物型態'],
+                              summerElectricityMoney: data[index].data['房屋費用設定']
+                              ['夏季電費'],
                               cityValues: data[index].data['房間位置與類型']['城市'],
                               bathroomType: data[index].data['房間格局']['衛浴'],
                               haveKitchen: data[index].data['房間格局']['廚房'],
@@ -252,6 +254,10 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                               fixed:  data[index].data['房屋費用設定']['電費儲值'],
                               hasDoorLock:  data[index].data['門鎖相關']['有無門鎖'],
                               doorLockNUM:  data[index].data['門鎖相關']['門鎖編號'],
+                              gatewayNUM:  data[index].data['網關相關']['網關編號'],
+                              hasGateway:  data[index].data['網關相關']['有無電表'],
+                              lastRecord:  data[index].data['網關相關']['上期度數'],
+                              noHasGatewayFixd:  data[index].data['房屋費用設定']['有電表儲值單位'],
                             );
                           }),
                     );
@@ -276,7 +282,7 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                       return Container(
                         color: AppConstants.backColor,
                         width: MediaQuery.of(context).size.width * 1,
-                        height: MediaQuery.of(context).size.height * .76,
+                        height: MediaQuery.of(context).size.height * .8,
                         child: GridView.builder(
                             shrinkWrap: true,
                             itemCount: data.length,
@@ -295,6 +301,7 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                                 ],
                                 houseImages2: data[index].data['照片位置']['照片2'],
                                 address: data[index].data['房間位置與類型']['地址'],
+                                cti: data[index].data['房間位置與類型']['城市'],
                                 houseMoney: data[index].data['房屋費用設定']['房租'],
                                 managementFee: data[index].data['房屋費用設定']
                                     ['管理費'],
@@ -334,6 +341,8 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                                 waterMoney: data[index].data['房屋費用設定']['水費'],
                                 electricityMoney: data[index].data['房屋費用設定']
                                     ['電費'],
+                                summerElectricityMoney: data[index].data['房屋費用設定']
+                                    ['夏季電費'],
                                 cashTime: data[index].data['房屋費用設定']['繳費時間'],
                                 party: data[index].data['其他條件']['開伙'],
                                 gender: data[index].data['其他條件']['性別'],
@@ -349,6 +358,7 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                                 haveLivingRoom: data[index].data['房間格局']['客廳'],
                                 bedNum: data[index].data['房間格局']['床數'],
                                 deposit: data[index].data['房屋費用設定']['押金'],
+                                storedValue: data[index].data['房屋費用設定']['電費每月固定'],
                                 area: data[index].data['樓層資訊']['房屋面積'],
                                 houseTypeValues: data[index].data['房間位置與類型']
                                     ['建物型態'],
@@ -356,11 +366,15 @@ class _HousingInformationPageState extends State<HousingInformationPage> {
                                 bathroomType: data[index].data['房間格局']['衛浴'],
                                 haveKitchen: data[index].data['房間格局']['廚房'],
                                 housingIntroduction: data[index].data['簡介'],
-                                floor: data[index].data['樓層資訊']['房間樓層'],
+                                floor: data[index].data['樓層資訊']['樓層'],
+                                theTotalArea: data[index].data['樓層資訊']['房屋面積'],
                                 otherFacilities: data[index].data['附加設施'],
                                 fixed:  data[index].data['房屋費用設定']['電費儲值'],
                                 hasDoorLock:  data[index].data['門鎖相關']['有無門鎖'],
                                 doorLockNUM:  data[index].data['門鎖相關']['門鎖編號'],
+                                gatewayNUM:  data[index].data['網關相關']['網關編號'],
+                                hasGateway:  data[index].data['網關相關']['有無電表'],
+                                noHasGatewayFixd:  data[index].data['房屋費用設定']['有電表儲值單位'],
                               );
                             }),
                       );

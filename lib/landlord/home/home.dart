@@ -10,7 +10,7 @@ import 'package:pie_chart/pie_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app_const/app_const.dart';
-import 'income_and_expenses.dart';
+import 'income.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key key}) : super(key: key);
@@ -24,11 +24,13 @@ class _HomePageState extends State<HomePage> {
   Map<String, double> dataMap1 = Map();
   List<int> waterData = [];
   List<int> electricityFeeData = [];
+  List<int> expenditureData = [];
   List<int> homeMoneyData = [];
   final _auth = FirebaseAuth.instance;
   String loginUser = '';
   int water;
   int electricityFee;
+  int expenditure;
   int homeMoney;
   bool upData;
 
@@ -41,94 +43,119 @@ class _HomePageState extends State<HomePage> {
     final user = await _auth.currentUser();
     if (user != null) {
       loginUser = user.email;
-    await  Firestore.instance
+      await Firestore.instance
           .collection("/房東/帳號資料/$loginUser")
-          .document('帳務資料').get().then((value) => upData = value['帳務更新']);
+          .document('帳務資料')
+          .get()
+          .then((value) => upData = value['帳務更新']);
       print(upData);
-        if (upData==true) {
-          final pieWaterData = await Firestore.instance
-              .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月水費')
-              .getDocuments();
-          print('獲取水費資料');
-          if (pieWaterData.documents.length == 0) {
-            setState(() {
-              water = 0;
-              savePieData('水收入', water.toDouble());
-            });
-          } else {
-            for (var data in pieWaterData.documents) {
-              waterData.add(int.parse(data['總價']));
-              print(waterData);
-            }
-            setState(() {
-              water = waterData.reduce((value, element) {
-                return value + element;
-              });
-              savePieData('水收入', water.toDouble());
-              print(water);
-            });
+      if (upData||waterLocalData==null) {
+        final pieWaterData = await Firestore.instance
+            .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月水費')
+            .getDocuments();
+        print('獲取水費資料');
+        if (pieWaterData.documents.length == 0) {
+          setState(() {
+            water = 0;
+            savePieData('水收入', water.toDouble());
+          });
+        } else {
+          for (var data in pieWaterData.documents) {
+            waterData.add(int.parse(data['總價']));
+            print(waterData);
           }
-          final pieHomeMoneyData = await Firestore.instance
-              .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月房租')
-              .getDocuments();
-          print('獲取房租資料');
-          if (pieHomeMoneyData.documents.length == 0) {
-            setState(() {
-              homeMoney = 0;
-              savePieData('房租收入', homeMoney.toDouble());
+          setState(() {
+            water = waterData.reduce((value, element) {
+              return value + element;
             });
-          } else {
-            for (var data in pieHomeMoneyData.documents) {
-              homeMoneyData.add(int.parse(data['總價']));
-              print(homeMoneyData);
-            }
-            setState(() {
-              homeMoney = homeMoneyData.reduce((value, element) {
-                return value + element;
-              });
-              savePieData('房租收入', homeMoney.toDouble());
-              print(homeMoney);
-            });
+            savePieData('水收入', water.toDouble());
+            print(water);
+          });
+        }
+        final pieHomeMoneyData = await Firestore.instance
+            .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月房租')
+            .getDocuments();
+        print('獲取房租資料');
+        if (pieHomeMoneyData.documents.length == 0) {
+          setState(() {
+            homeMoney = 0;
+            savePieData('房租收入', homeMoney.toDouble());
+          });
+        } else {
+          for (var data in pieHomeMoneyData.documents) {
+            homeMoneyData.add(int.parse(data['總價']));
+            print(homeMoneyData);
           }
-
-          final pieElectricityFeeData = await Firestore.instance
-              .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月電費')
-              .getDocuments();
-          print('獲取電費資料');
-          if (pieElectricityFeeData.documents.length == 0) {
-            setState(() {
-              electricityFee = 0;
-              savePieData('電收入', electricityFee.toDouble());
+          setState(() {
+            homeMoney = homeMoneyData.reduce((value, element) {
+              return value + element;
             });
-          } else {
-            for (var data in pieElectricityFeeData.documents) {
-              electricityFeeData.add(int.parse(data['總價']));
-              print(electricityFeeData);
-            }
-            setState(() {
-              electricityFee = electricityFeeData.reduce((value, element) {
-                return value + element;
-              });
-              savePieData('電收入', electricityFee.toDouble());
-              print(electricityFee);
-            });
-          }
-          print('帳務更新更改');
-          await Firestore.instance
-              .collection("/房東/帳號資料/$loginUser")
-              .document('帳務資料')
-              .updateData({'帳務更新': false});
-         await getPieWaterData();
-          await getPieHouseMoneyData();
-          await getPieEleData();
-          await getPieData();
-        } else if(upData ==false||upData == null){
-          await  getPieWaterData();
-          await getPieHouseMoneyData();
-          await  getPieEleData();
-          await  getPieData();
+            savePieData('房租收入', homeMoney.toDouble());
+            print(homeMoney);
+          });
         }
 
+        final pieElectricityFeeData = await Firestore.instance
+            .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月電費')
+            .getDocuments();
+        print('獲取電費資料');
+        if (pieElectricityFeeData.documents.length == 0) {
+          setState(() {
+            electricityFee = 0;
+            savePieData('電收入', electricityFee.toDouble());
+          });
+        } else {
+          for (var data in pieElectricityFeeData.documents) {
+            electricityFeeData.add(int.parse(data['總價']));
+            print(electricityFeeData);
+          }
+          setState(() {
+            electricityFee = electricityFeeData.reduce((value, element) {
+              return value + element;
+            });
+            savePieData('電收入', electricityFee.toDouble());
+            print(electricityFee);
+          });
+        }
+        final pieExpenditureData = await Firestore.instance
+            .collection('/房東/帳號資料/$loginUser/帳務資料/${DateTime.now().month}交易紀錄')
+            .getDocuments();
+        print('獲取交易紀錄');
+        if (pieExpenditureData.documents.length == 0) {
+          setState(() {
+            expenditure = 0;
+            savePieData('交易紀錄', expenditure.toDouble());
+          });
+        } else {
+          for (var data in pieExpenditureData.documents) {
+            expenditureData.add(int.parse(data['總價']));
+            print(expenditureData);
+          }
+          setState(() {
+            expenditure = expenditureData.reduce((value, element) {
+              return value + element;
+            });
+            savePieData('交易紀錄', expenditure.toDouble());
+            print(expenditure);
+          });
+        }
+        print('帳務更新更改');
+        await Firestore.instance
+            .collection("/房東/帳號資料/$loginUser")
+            .document('帳務資料')
+            .updateData({'帳務更新': false});
+        await getPieWaterData();
+        await getPieExpenditureData();
+        await getPieHouseMoneyData();
+        await getPieEleData();
+        await getPieData();
+      } else if (upData == false || upData == null) {
+        await getPieWaterData();
+        await getPieExpenditureData();
+        await getPieHouseMoneyData();
+        await getPieEleData();
+        await getPieData();
+      }
     }
   }
 
@@ -156,7 +183,7 @@ class _HomePageState extends State<HomePage> {
       dataMap.putIfAbsent("電費$electricityFeeLocalData",
           () => electricityFeeLocalData.toDouble());
       dataMap1.putIfAbsent("本月支出", () => 0);
-      dataMap1.putIfAbsent("修繕18000", () => 18000);
+      dataMap1.putIfAbsent("點數花費$expenditureLocalData", () => expenditureLocalData.toDouble());
       dataMap1.putIfAbsent("其他1500", () => 1500);
       dataMap1.putIfAbsent(" ", () => 0);
     });
@@ -164,6 +191,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    getPieWaterData();
     getData();
     super.initState();
   }
@@ -186,6 +214,7 @@ class _HomePageState extends State<HomePage> {
   int waterLocalData;
   int electricityFeeLocalData;
   int houseMoneyLocalData;
+  int expenditureLocalData;
 
   Future getPieWaterData() async {
     var userName;
@@ -195,6 +224,16 @@ class _HomePageState extends State<HomePage> {
     if (userName != null) {
       print('開始獲取水費');
       return waterLocalData = userName;
+    } else {}
+  }
+  Future getPieExpenditureData() async {
+    var userName;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userName = prefs.getDouble('交易紀錄').toInt();
+
+    if (userName != null) {
+      print('開始獲取交易紀錄');
+      return expenditureLocalData = userName;
     } else {}
   }
 
@@ -287,7 +326,7 @@ class _HomePageState extends State<HomePage> {
                       padding: EdgeInsets.fromLTRB(100, 16, 100, 16),
                       onPressed: () {
                         Navigator.pushNamed(
-                            context, IncomeAndExpenses.routeName);
+                            context, Income.routeName);
                       },
                       child: Text(
                         '查看詳細資料',

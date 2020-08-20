@@ -4,13 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
-import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:landlord_happy/app_const/Adapt.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
-
 import 'package:landlord_happy/app_const/user.dart';
+import 'file:///D:/FlutterProjects/landlord_happy_copy/lib/landlord/my/pay/pay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../login.dart';
 import 'my_page_set.dart';
 import 'view_profile.dart';
@@ -49,14 +47,14 @@ class _MyPageState extends State<MyPage> {
   }
 
   Future getData() async {
+    try{
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     userName = prefs.getString('$loginUser姓名');
 
     if (userName != null && upDate == false) {
       return userData.name = userName;
-    }
-    else{
+    } else {
       await _firestore
           .collection("/房東/帳號資料/$loginUser")
           .document('資料')
@@ -71,6 +69,10 @@ class _MyPageState extends State<MyPage> {
           saveName('$loginUser姓名', userData.name);
         });
       });
+    }}catch(e){
+      if (userData.name == null) {
+        _logout();
+      }
     }
   }
 
@@ -80,8 +82,7 @@ class _MyPageState extends State<MyPage> {
     userPhone = phone.getString('$loginUser手機號碼');
     if (userPhone != null && upDate == false) {
       return userData.phoneNumber = userPhone;
-    }
-    else{
+    } else {
       await _firestore
           .collection("/房東/帳號資料/$loginUser")
           .document('資料')
@@ -105,8 +106,7 @@ class _MyPageState extends State<MyPage> {
     userUrl = url.getString('$loginUser url');
     if (userUrl != null && upDate == false) {
       return userData.url = userUrl;
-    }
-    else{
+    } else {
       await _firestore
           .collection("/房東/帳號資料/$loginUser")
           .document('資料')
@@ -130,8 +130,7 @@ class _MyPageState extends State<MyPage> {
     userPassWord = passWord.getString('$loginUser密碼');
     if (userPassWord != null && upDate == false) {
       return userData.password = userPassWord;
-    }
-    else{
+    } else {
       await _firestore
           .collection("/房東/帳號資料/$loginUser")
           .document('資料')
@@ -156,8 +155,7 @@ class _MyPageState extends State<MyPage> {
     userAddress = address.getString('$loginUser地址');
     if (userAddress != null && upDate == false) {
       return userData.address = userAddress;
-    }
-    else {
+    } else {
       await _firestore
           .collection("/房東/帳號資料/$loginUser")
           .document('資料')
@@ -176,9 +174,10 @@ class _MyPageState extends State<MyPage> {
   }
 
 //登出
-  void _logout() {
-    _auth.signOut();
-    Navigator.popAndPushNamed(context, LoginPage.routeName);
+  void _logout() async {
+    await _auth.signOut();
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (context)=>LoginPage(updeta: true,)));
   }
 
   //更新密碼
@@ -252,7 +251,6 @@ class _MyPageState extends State<MyPage> {
                               ],
                             )),
                       ),
-
                     ],
                   ),
                 ),
@@ -392,7 +390,6 @@ class _MyPageState extends State<MyPage> {
         });
   }
 
-
   //取得使用者資訊
   bool upDate;
 
@@ -422,10 +419,6 @@ class _MyPageState extends State<MyPage> {
     }
   }
 
-  void http() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => Http()));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -450,21 +443,15 @@ class _MyPageState extends State<MyPage> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[
                       Container(
-                        margin: EdgeInsets.only(left: 15, right: 15),
+                        margin: EdgeInsets.only(left: 15, right: 15, top: 15),
                         child: Column(
                           children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                '個人設定',
-                                style: TextStyle(fontSize: Adapt.px(50)),
-                              ),
-                            ),
                             Card(
                               child: Column(
                                 children: <Widget>[
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
                                     children: <Widget>[
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
@@ -475,62 +462,113 @@ class _MyPageState extends State<MyPage> {
                                                 NetworkImage(userData.url),
                                             radius: Adapt.px(120)),
                                       ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Text(
+                                            userData.name ?? '',
+                                            style: TextStyle(
+                                                fontSize: Adapt.px(30),
+                                                color: AppConstants
+                                                    .appBarAndFontColor),
+                                          ),
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 15),
+                                            child: Text(
+                                              userData.phoneNumber ?? '',
+                                              style: TextStyle(
+                                                  fontSize: Adapt.px(25),
+                                                  color: AppConstants
+                                                      .appBarAndFontColor),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.settings,
+                                          size: Adapt.px(50),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ViewProFilePage(
+                                                        userName: userData.name,
+                                                        phoneNb: userData
+                                                            .phoneNumber,
+                                                        address:
+                                                            userData.address,
+                                                        mail: loginUser,
+                                                        password:
+                                                            userData.password,
+                                                        url: userData.url,
+                                                      )));
+                                        },
+                                      )
                                     ],
                                   ),
                                   Container(
                                     height: Adapt.px(100),
                                     color: AppConstants.backColor,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: <Widget>[
-                                        Text(
-                                          userData.name ?? '',
-                                          style: TextStyle(
-                                              fontSize: Adapt.px(25),
-                                              color: AppConstants
-                                                  .appBarAndFontColor),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 10, right: 10),
-                                          child: Text(
-                                            userData.phoneNumber ?? '',
-                                            style: TextStyle(
-                                                fontSize: Adapt.px(25),
+                                    child: FlatButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) => Pay(
+                                                      loginUser: loginUser,
+                                                    )));
+                                      },
+                                      child: Container(
+                                        child: Row(
+                                          children: <Widget>[
+                                            Expanded(
+                                              flex: 5,
+                                              child: Text(
+                                                '點數中心',
+                                                style: TextStyle(
+                                                    color: AppConstants
+                                                        .appBarAndFontColor),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 1,
+                                              child: Icon(
+                                                Icons.fiber_smart_record,
                                                 color: AppConstants
-                                                    .appBarAndFontColor),
-                                          ),
+                                                    .appBarAndFontColor,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 1,
+                                              child: StreamBuilder<
+                                                      DocumentSnapshot>(
+                                                  stream: Firestore.instance
+                                                      .collection(
+                                                          '/房東/帳號資料/$loginUser')
+                                                      .document('資料')
+                                                      .snapshots(),
+                                                  builder: (context, snapshot) {
+                                                    final data = snapshot.data;
+                                                    return Text(
+                                                      data['剩餘點數'],
+                                                      style: TextStyle(
+                                                          color: AppConstants
+                                                              .appBarAndFontColor),
+                                                    );
+                                                  }),
+                                            )
+                                          ],
                                         ),
-                                        IconButton(
-                                          icon: Icon(
-                                            Icons.settings,
-                                            size: Adapt.px(50),
-                                          ),
-                                          onPressed: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        ViewProFilePage(
-                                                          userName:
-                                                              userData.name,
-                                                          phoneNb: userData
-                                                              .phoneNumber,
-                                                          address:
-                                                              userData.address,
-                                                          mail: loginUser,
-                                                          password:
-                                                              userData.password,
-                                                          url: userData.url,
-                                                        )));
-                                          },
-                                        )
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                  Container(
+                                    height: Adapt.px(740),
                                     child: ListView(
                                       shrinkWrap: true,
                                       children: <Widget>[
@@ -569,24 +607,6 @@ class _MyPageState extends State<MyPage> {
                                         ),
                                         ListTile(
                                           onTap: () {
-//                                          renew(context);
-                                            http();
-                                          },
-                                          leading: Icon(
-                                            Icons.update,
-                                            size: Adapt.px(50),
-                                            color: Colors.blue[200],
-                                          ),
-                                          title: Text(
-                                            '立刻續約',
-                                            style: TextStyle(
-                                                fontSize: Adapt.px(23),
-                                                color: AppConstants
-                                                    .appBarAndFontColor),
-                                          ),
-                                        ),
-                                        ListTile(
-                                          onTap: () {
                                             passWord(
                                                 context, userData.password);
                                           },
@@ -597,6 +617,23 @@ class _MyPageState extends State<MyPage> {
                                           ),
                                           title: Text(
                                             '門鎖密碼設定',
+                                            style: TextStyle(
+                                                fontSize: Adapt.px(23),
+                                                color: AppConstants
+                                                    .appBarAndFontColor),
+                                          ),
+                                        ),
+                                        ListTile(
+                                          onTap: () {
+                                            _landlordSet.viewContract(context);
+                                          },
+                                          leading: Icon(
+                                            Icons.update,
+                                            size: Adapt.px(50),
+                                            color: Colors.blue[200],
+                                          ),
+                                          title: Text(
+                                            '查看合約',
                                             style: TextStyle(
                                                 fontSize: Adapt.px(23),
                                                 color: AppConstants
@@ -648,31 +685,5 @@ class _MyPageState extends State<MyPage> {
                   ),
                 ),
               ));
-  }
-}
-
-class Http extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: WebviewScaffold(
-        url: 'http://54.196.46.70/index.php?route=product/category&path=20',
-        appBar: AppBar(
-          centerTitle: true,
-          backgroundColor: AppConstants.appBarAndFontColor,
-          title: const Text('付款頁面'),
-        ),
-        withZoom: true,
-        withLocalStorage: true,
-        hidden: true,
-        ignoreSSLErrors: false,
-        initialChild: Container(
-          color: AppConstants.tenantBackColor,
-          child: const Center(
-            child: Text('請稍等.....'),
-          ),
-        ),
-      ),
-    );
   }
 }

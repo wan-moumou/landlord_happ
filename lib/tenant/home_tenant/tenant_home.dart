@@ -47,16 +47,19 @@ class _TenantHomePageState extends State<TenantHomePage> {
   String houseName;
   String tenant;
   String electricity;
+  String summerElectricity;
   String waterMoney;
-  bool electricityStoredValue;
+  bool noHasGatewayFixd;
   int waterLocalData;
   int electricityFeeLocalData;
   int houseMoneyLocalData;
   bool upData;
+
   Future savePieData(String key, double value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setDouble(key, value);
   }
+
   Future getPieWaterData() async {
     var userName;
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -66,7 +69,6 @@ class _TenantHomePageState extends State<TenantHomePage> {
       print('開始獲取水費');
       return waterLocalData = userName;
     }
-
   }
 
   Future getPieEleData() async {
@@ -92,7 +94,8 @@ class _TenantHomePageState extends State<TenantHomePage> {
       return houseMoneyLocalData = userName;
     }
   }
-  void getPieData()async {
+
+  void getPieData() async {
     print('更新圓餅圖');
     setState(() {
       dataMap.putIfAbsent("本月收入", () => 0);
@@ -100,50 +103,52 @@ class _TenantHomePageState extends State<TenantHomePage> {
           "房租$houseMoneyLocalData", () => houseMoneyLocalData.toDouble());
       dataMap.putIfAbsent("水費$waterLocalData", () => waterLocalData.toDouble());
       dataMap.putIfAbsent("電費$electricityFeeLocalData",
-              () => electricityFeeLocalData.toDouble());
+          () => electricityFeeLocalData.toDouble());
     });
-
   }
 
   Future getData() async {
     final user = await _auth.currentUser();
     if (user != null) {
       loginUser = user.email;
-    await Firestore.instance
-        .collection("/房客/帳號資料/$loginUser")
-        .getDocuments()
-        .then((QuerySnapshot snapshot) {
-      snapshot.documents.forEach((f) {
-        houseName = f['房屋名稱'];
-        tenant = f['房東姓名'];
-        print(houseName);
-      });
-    });
-    Firestore.instance
-        .collection('房東/帳號資料/$tenant/資料/擁有房間')
-        .document(houseName)
-        .snapshots()
-        .forEach((element) {
-      electricityStoredValue = element['房屋費用設定']['電費儲值'];
-      electricity = element['房屋費用設定']['電費'];
-      waterMoney = element['房屋費用設定']['水費'];
-      print(electricity);
-    });
-
-      await  Firestore.instance
+      await Firestore.instance
           .collection("/房客/帳號資料/$loginUser")
-          .document('帳務資料').get().then((value) => upData = value['帳務更新']);
+          .getDocuments()
+          .then((QuerySnapshot snapshot) {
+        snapshot.documents.forEach((f) {
+          houseName = f['房屋名稱'];
+          tenant = f['房東姓名'];
+          print(houseName);
+        });
+      });
+      Firestore.instance
+          .collection('房東/帳號資料/$tenant/資料/擁有房間')
+          .document(houseName)
+          .snapshots()
+          .forEach((element) {
+        noHasGatewayFixd = element['房屋費用設定']['有電表儲值單位'];
+        electricity = element['房屋費用設定']['電費'];
+        summerElectricity = element['房屋費用設定']['夏季電費'];
+        waterMoney = element['房屋費用設定']['水費'];
+        print(electricity);
+      });
+
+      await Firestore.instance
+          .collection("/房客/帳號資料/$loginUser")
+          .document('帳務資料')
+          .get()
+          .then((value) => upData = value['帳務更新']);
       print(upData);
       await Firestore.instance
           .collection("/房客/帳號資料/$loginUser")
           .getDocuments()
           .then((QuerySnapshot snapshot) {
         snapshot.documents.forEach((f) {
-          remainingDegree = f['剩餘度數'];
+          remainingDegree = f['剩餘金額'];
         });
       });
 
-      if (upData==true) {
+      if (upData == true) {
         final pieHomeMoneyData = await Firestore.instance
             .collection('房客/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月房租')
             .getDocuments();
@@ -187,7 +192,6 @@ class _TenantHomePageState extends State<TenantHomePage> {
           });
         }
 
-
         final pieElectricityFeeData = await Firestore.instance
             .collection('房客/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月電費')
             .getDocuments();
@@ -219,96 +223,16 @@ class _TenantHomePageState extends State<TenantHomePage> {
         await getPieHouseMoneyData();
         await getPieEleData();
         await getPieData();
-      } else if(upData ==false||upData == null){
-        await  getPieWaterData();
+      } else if (upData == false || upData == null) {
+        await getPieWaterData();
         await getPieHouseMoneyData();
-        await  getPieEleData();
-        await  getPieData();
+        await getPieEleData();
+        await getPieData();
       }
-
     }
   }
-//  Future getData() async {
-//
-//    final user = await _auth.currentUser();
-//    if (user != null) {
-//      loginUser = user.email;
-//      await Firestore.instance
-//          .collection("/房客/帳號資料/$loginUser")
-//          .getDocuments()
-//          .then((QuerySnapshot snapshot) {
-//        snapshot.documents.forEach((f) {
-//          remainingDegree = f['剩餘度數'];
-//        });
-//      });
-//      final pieWaterData = await Firestore.instance
-//          .collection('房客/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月水費')
-//          .getDocuments();
-//      if (pieWaterData.documents.length == 0) {
-//        setState(() {
-//          water = 0;
-//        });
-//      } else {
-//        for (var data in pieWaterData.documents) {
-//          waterData.add(int.parse(data['總價']));
-//          print(waterData);
-//        }
-//        setState(() {
-//          water = waterData.reduce((value, element) {
-//            return value + element;
-//          });
-//          print(water);
-//        });
-//      }
-//
-//      final pieHomeMoneyData = await Firestore.instance
-//          .collection('房客/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月房租')
-//          .getDocuments();
-//      if (pieHomeMoneyData.documents.length == 0) {
-//        setState(() {
-//          homeMoney = 0;
-//        });
-//      } else {
-//        for (var data in pieHomeMoneyData.documents) {
-//          homeMoneyData.add(int.parse(data['總價']));
-//          print(homeMoneyData);
-//        }
-//        setState(() {
-//          homeMoney = homeMoneyData.reduce((value, element) {
-//            return value + element;
-//          });
-//          print(homeMoney);
-//        });
-//      }
-//
-//      final pieElectricityFeeData = await Firestore.instance
-//          .collection('房客/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月電費')
-//          .getDocuments();
-//      if (pieElectricityFeeData.documents.length == 0) {
-//        setState(() {
-//          electricityFee = 0;
-//        });
-//      } else {
-//        for (var data in pieElectricityFeeData.documents) {
-//          electricityFeeData.add(int.parse(data['總價']));
-//          print(electricityFeeData);
-//        }
-//        setState(() {
-//          electricityFee = electricityFeeData.reduce((value, element) {
-//            return value + element;
-//          });
-//          print(electricityFee);
-//        });
-//      }
-//    }
-//    water == null || electricityFee == null ? null : getPieData();
-//  }
 
-
-
-  void getUserName() async {
-
-  }
+  void getUserName() async {}
 
   @override
   void initState() {
@@ -341,32 +265,50 @@ class _TenantHomePageState extends State<TenantHomePage> {
                     children: <Widget>[
                       waterLocalData == null || electricityFeeLocalData == null
                           ? Container(
+                              width: 400,
+                              height: 285,
+                              child: Center(
+                                child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                                  children: <Widget>[
+                                    Text('努力加載中...請稍後'),
+                                    CircularProgressIndicator(),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Pie(
+                              dataMap: dataMap,
+                              water: waterLocalData,
+                              waterData: waterData,
+                              electricityFeeData: electricityFeeData,
+                              electricityFee: electricityFeeLocalData,
+                              homeMoney: houseMoneyLocalData,
+                              homeMoneyData: homeMoneyData,
+                            ),
+                      waterLocalData == null || electricityFeeLocalData == null
+                          ? Container(
                         width: 400,
                         height: 285,
                         child: Center(
-                          child: CircularProgressIndicator(),
+                          child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Text('努力加載中...請稍後'),
+                              CircularProgressIndicator(),
+                            ],
+                          ),
                         ),
                       )
-                          :
-                      Pie(
-                        dataMap: dataMap,
-                        water: waterLocalData,
-                        waterData: waterData,
-                        electricityFeeData: electricityFeeData,
-                        electricityFee: electricityFeeLocalData,
-                        homeMoney: houseMoneyLocalData,
-                        homeMoneyData: homeMoneyData,
-                      ),
-                      Water(
+                          : Water(
                         water: waterLocalData,
                         electricityFee: electricityFeeLocalData,
                         homeMoney: houseMoneyLocalData,
                         tenant: tenant,
                         houseName: houseName,
                         remainingDegree: remainingDegree,
-                        electricityStoredValue: electricityStoredValue,
+                        electricityStoredValue: noHasGatewayFixd,
                         waterMoney: waterMoney,
                         electricity: electricity,
+                        summerElectricity: summerElectricity,
                       )
                     ],
                     scrollDirection: Axis.horizontal, //左右滾動
@@ -489,11 +431,13 @@ class Water extends StatefulWidget {
   final String waterMoney;
   final String remainingDegree;
   final String electricity;
+  final String summerElectricity;
   final bool electricityStoredValue;
 
   Water(
       {this.homeMoney,
       this.electricityFee,
+      this.summerElectricity,
       this.waterMoney,
       this.electricityStoredValue,
       this.electricity,
@@ -507,11 +451,28 @@ class Water extends StatefulWidget {
 }
 
 class _WaterState extends State<Water> {
+  String nowMonth;
+  int asd;
+
+  void getData() {
+    if (nowMonth == '6' ||
+        nowMonth == '7' ||
+        nowMonth == '8' ||
+        nowMonth == '9'){
+      asd = (int.parse(widget.remainingDegree) / int.parse(widget.summerElectricity))
+          .round();}else{
+      asd = (int.parse(widget.remainingDegree) / int.parse(widget.electricity))
+          .round();
+    }
+  }
+
   @override
   void initState() {
+    nowMonth = DateTime.now().month.toString();
+    getData();
+
     Timer(Duration(seconds: 2), () {
       setState(() {});
-      print('object');
     });
     super.initState();
   }
@@ -536,9 +497,9 @@ class _WaterState extends State<Water> {
                     Padding(
                       padding: const EdgeInsets.only(top: 20),
                       child: Text(
-                        '儲值餘額',
+                        '儲值餘額:${widget.remainingDegree}',
                         style: TextStyle(
-                            fontWeight: FontWeight.w400, fontSize: 20),
+                            fontWeight: FontWeight.w400, fontSize: 20,color: AppConstants.tenantAppBarAndFontColor),
                       ),
                     ),
                     SizedBox(
@@ -555,9 +516,16 @@ class _WaterState extends State<Water> {
                         ),
                         Column(
                           children: <Widget>[
-                            widget.electricityStoredValue
-                                ? Text('電費${widget.electricity}/度')
-                                : Text('電費${widget.electricity}/月'),
+                            nowMonth == '6' ||
+                                    nowMonth == '7' ||
+                                    nowMonth == '8' ||
+                                    nowMonth == '9'
+                                ? widget.electricityStoredValue
+                                    ? Text('電費${widget.summerElectricity}/度')
+                                    : Text('電費${widget.summerElectricity}/月')
+                                : widget.electricityStoredValue
+                                    ? Text('電費${widget.electricity}/度')
+                                    : Text('電費${widget.electricity}/月'),
                             Text('本月儲值${widget.electricityFee}元'),
                           ],
                         ),
@@ -630,7 +598,7 @@ class _WaterState extends State<Water> {
                                   children: <Widget>[
                                     Text(
                                       widget.electricityStoredValue
-                                          ? widget.remainingDegree
+                                          ? "$asd"
                                           : "∞",
                                       style: TextStyle(
                                           fontSize: 35,

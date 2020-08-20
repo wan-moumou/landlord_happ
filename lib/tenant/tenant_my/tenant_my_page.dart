@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
 import 'package:landlord_happy/app_const/user.dart';
+import 'package:landlord_happy/http_post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../login.dart';
 import 'pay/tenant_pay.dart';
@@ -25,8 +27,15 @@ class _TenantMyPageState extends State<TenantMyPage> {
     super.initState();
   }
 
-  void _logout() {
-    Navigator.popAndPushNamed(context, LoginPage.routeName);
+  void _logout() async {
+    await _auth.signOut();
+    Navigator.pop(context);
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => LoginPage(
+                  updeta: true,
+                )));
   }
 
   void commonProblem(BuildContext context) {
@@ -55,11 +64,11 @@ class _TenantMyPageState extends State<TenantMyPage> {
                             q1 = !q1;
                           });
                         },
-                        child: Text('如何繳費？'),
+                        child: Text('金流手續費？'),
                       ),
                       q1
                           ? Text(
-                              '掏出錢拿去繳就是了！',
+                              '信用卡	2.8%	-       無上限\nWeb ATM	1%	-	單筆收取上限20元\nATM轉帳	1%	-	單筆收取上限20元 銀行時間\n超商代碼繳費	28元     非即時交易   數小時-1天\n條碼繳費	20元     非即時交易   5天',
                               style: TextStyle(fontSize: 12),
                             )
                           : Container()
@@ -177,9 +186,6 @@ class _TenantMyPageState extends State<TenantMyPage> {
     await getUrl();
     await getPhone();
     setState(() {});
-    if (userData.name == null) {
-      _logout();
-    }
   }
 
   Future saveName(String key, String value) async {
@@ -188,29 +194,34 @@ class _TenantMyPageState extends State<TenantMyPage> {
   }
 
   Future getData() async {
-    var userName;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    userName = prefs.getString('$loginUser姓名');
+    try {
+      var userName;
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      userName = prefs.getString('$loginUser姓名');
 
-    if (userName != null && upDate == false) {
-      return userData.name = userName;
-    }
-    else{
-
-      print('開始獲取姓名');
-      await _firestore
-          .collection("/房客/帳號資料/$loginUser")
-          .getDocuments()
-          .then((QuerySnapshot snapshot) {
-        snapshot.documents.forEach((f) {
-          userData.name = f["name"];
-          saveName('$loginUser姓名', userData.name);
+      if (userName != null && upDate == false) {
+        return userData.name = userName;
+      } else {
+        print('開始獲取姓名');
+        await _firestore
+            .collection("/房客/帳號資料/$loginUser")
+            .getDocuments()
+            .then((QuerySnapshot snapshot) {
+          snapshot.documents.forEach((f) {
+            userData.name = f["name"];
+            saveName('$loginUser姓名', userData.name);
+          });
         });
-      });
-      await _firestore
-          .collection("/房客/帳號資料/$loginUser")
-          .document('資料')
-          .updateData({'更新': false});
+        await _firestore
+            .collection("/房客/帳號資料/$loginUser")
+            .document('資料')
+            .updateData({'更新': false});
+      }
+    } catch (e) {
+      print(e);
+      if (userData.name == null) {
+        _logout();
+      }
     }
   }
 
@@ -220,9 +231,7 @@ class _TenantMyPageState extends State<TenantMyPage> {
     userPhone = phone.getString('$loginUser手機號碼');
     if (userPhone != null && upDate == false) {
       return userData.phoneNumber = userPhone;
-    }
-    else{
-
+    } else {
       print('開始獲取號碼');
       await _firestore
           .collection("/房客/帳號資料/$loginUser")
@@ -246,9 +255,7 @@ class _TenantMyPageState extends State<TenantMyPage> {
     userUrl = url.getString('$loginUser url');
     if (userUrl != null && upDate == false) {
       return userData.url = userUrl;
-    }
-    else{
-
+    } else {
       await _firestore
           .collection("/房客/帳號資料/$loginUser")
           .getDocuments()
@@ -272,10 +279,7 @@ class _TenantMyPageState extends State<TenantMyPage> {
     userPassWord = passWord.getString('$loginUser密碼');
     if (userPassWord != null && upDate == false) {
       return userData.password = userPassWord;
-    }
-    else{
-
-
+    } else {
       print('開始獲取密碼');
       await _firestore
           .collection("/房客/帳號資料/$loginUser")
@@ -299,8 +303,7 @@ class _TenantMyPageState extends State<TenantMyPage> {
     userAddress = address.getString('$loginUser地址');
     if (userAddress != null && upDate == false) {
       return userData.address = userAddress;
-    }
-    else {
+    } else {
       print('開始獲取地址');
       await _firestore
           .collection("/房客/帳號資料/$loginUser")
@@ -317,200 +320,204 @@ class _TenantMyPageState extends State<TenantMyPage> {
           .updateData({'更新': false});
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppConstants.tenantAppBarAndFontColor,
-        title: Text('我的'),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-      ),
-      body: userData.name == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  CircularProgressIndicator(),
-                ],
-              ),
-            )
-          : SingleChildScrollView(
-                        child: Container(
-                          height: MediaQuery.of(context).size.height * .8,
-                          color: Colors.green[50],
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: <Widget>[
-                              Container(
-                                margin: EdgeInsets.only(left: 15, right: 15),
+        appBar: AppBar(
+          backgroundColor: AppConstants.tenantAppBarAndFontColor,
+          title: Text('我的'),
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+        ),
+        body: userData.name == null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    CircularProgressIndicator(),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                child: Container(
+                  height: MediaQuery.of(context).size.height * .85,
+                  color: Colors.green[50],
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
+                      Container(
+                        margin: EdgeInsets.only(left: 15, right: 15),
+                        child: Column(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Card(
                                 child: Column(
                                   children: <Widget>[
-                                    Text(
-                                      '個人設定',
-                                      style: TextStyle(fontSize: 20),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: CircleAvatar(
+                                        //內圈相片
+                                        backgroundImage:
+                                            NetworkImage(userData.url),
+                                        radius:
+                                            MediaQuery.of(context).size.width /
+                                                7.2,
+                                      ),
                                     ),
-                                    Card(
-                                      child: Column(
+                                    Container(
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              .07,
+                                      color: AppConstants.tenantBackColor,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: <Widget>[
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: CircleAvatar(
-                                              //內圈相片
-                                              backgroundImage:
-                                                  NetworkImage(userData.url),
-                                              radius: MediaQuery.of(context)
-                                                      .size
-                                                      .width /
-                                                  7.2,
-                                            ),
-                                          ),
-                                          Container(
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                .07,
-                                            color: AppConstants.tenantBackColor,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: <Widget>[
-                                                Text(
-                                                  userData.name,
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: AppConstants
-                                                          .tenantAppBarAndFontColor),
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 10, right: 10),
-                                                  child: Text(
-                                                    userData.phoneNumber,
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppConstants
-                                                            .tenantAppBarAndFontColor),
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  icon: Icon(Icons.settings),
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                TenantViewProFilePage(
-                                                                  userName: userData.name,
-                                                                  phoneNb: userData.phoneNumber,
-                                                                  address: userData.address,
-                                                                  mail:
-                                                                      loginUser,
-                                                                  password:
-                                                                      userData.password,
-                                                                  url: userData.url,
-                                                                )));
-                                                  },
-                                                )
-                                              ],
-                                            ),
+                                          Text(
+                                            userData.name,
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppConstants
+                                                    .tenantAppBarAndFontColor),
                                           ),
                                           Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: ListView(
-                                              shrinkWrap: true,
-                                              children: <Widget>[
-                                                ListTile(
-                                                  onTap: () {
-                                                    commonProblem(context);
-                                                  },
-                                                  leading: Icon(
-                                                    Icons.report_problem,
-                                                    size: 40,
-                                                    color: Colors.red[900],
-                                                  ),
-                                                  title: Text(
-                                                    '常見問題',
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppConstants
-                                                            .appBarAndFontColor),
-                                                  ),
-                                                ),
-                                                ListTile(
-                                                  onTap: () {
-                                                    aboutUs(context);
-                                                  },
-                                                  leading: Icon(Icons.book,
-                                                      size: 40,
-                                                      color: AppConstants
-                                                          .appBarAndFontColor),
-                                                  title: Text(
-                                                    '關於房東天堂',
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppConstants
-                                                            .appBarAndFontColor),
-                                                  ),
-                                                ),
-                                                ListTile(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                TenantPay()));
-                                                  },
-                                                  leading: Icon(
-                                                    Icons.update,
-                                                    size: 40,
-                                                    color: Colors.blue[200],
-                                                  ),
-                                                  title: Text(
-                                                    '立刻儲值',
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppConstants
-                                                            .appBarAndFontColor),
-                                                  ),
-                                                ),
-                                                ListTile(
-                                                  onTap: () {
-                                                    shareIt(context);
-                                                  },
-                                                  leading: Icon(
-                                                    Icons.share,
-                                                    size: 40,
-                                                    color: Colors.blueGrey,
-                                                  ),
-                                                  title: Text(
-                                                    '分享',
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppConstants
-                                                            .appBarAndFontColor),
-                                                  ),
-                                                ),
-                                                ListTile(
-                                                  onTap: () {
-                                                    _logout();
-                                                  },
-                                                  leading: Icon(
-                                                      Icons
-                                                          .call_missed_outgoing,
-                                                      size: 40,
-                                                      color: Colors.blue),
-                                                  title: Text(
-                                                    '登出',
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                ),
-                                              ],
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Text(
+                                              userData.phoneNumber,
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppConstants
+                                                      .tenantAppBarAndFontColor),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: Icon(Icons.settings),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          TenantViewProFilePage(
+                                                            userName:
+                                                                userData.name,
+                                                            phoneNb: userData
+                                                                .phoneNumber,
+                                                            address: userData
+                                                                .address,
+                                                            mail: loginUser,
+                                                            password: userData
+                                                                .password,
+                                                            url: userData.url,
+                                                          )));
+                                            },
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: ListView(
+                                        shrinkWrap: true,
+                                        children: <Widget>[
+                                          ListTile(
+                                            onTap: () {
+                                              commonProblem(context);
+                                            },
+                                            leading: Icon(
+                                              Icons.report_problem,
+                                              size: 40,
+                                              color: Colors.red[900],
+                                            ),
+                                            title: Text(
+                                              '常見問題',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppConstants
+                                                      .appBarAndFontColor),
+                                            ),
+                                          ),
+                                          ListTile(
+                                            onTap: () {
+                                              aboutUs(context);
+                                            },
+                                            leading: Icon(Icons.book,
+                                                size: 40,
+                                                color: AppConstants
+                                                    .appBarAndFontColor),
+                                            title: Text(
+                                              '關於房東天堂',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppConstants
+                                                      .appBarAndFontColor),
+                                            ),
+                                          ),
+                                          ListTile(
+                                            onTap: () {
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          TenantPay()));
+                                            },
+                                            leading: Icon(
+                                              Icons.update,
+                                              size: 40,
+                                              color: Colors.blue[200],
+                                            ),
+                                            title: Text(
+                                              '立刻儲值',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppConstants
+                                                      .appBarAndFontColor),
+                                            ),
+                                          ),
+                                          ListTile(
+                                            onTap: () {
+
+//                                                      shareIt(context);
+                                              HttpPost().getURI('ItemDesc=ATM轉帳&',
+                                                'CREDIT=1',
+                                                "Email=$loginUser&",
+                                                "Amt=3600&", 'MerchantOrderNo=A01${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}${DateTime.now().second}&'
+                                                ,);
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          Web()));
+                                            },
+                                            leading: Icon(
+                                              Icons.share,
+                                              size: 40,
+                                              color: Colors.blueGrey,
+                                            ),
+                                            title: Text(
+                                              '分享',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppConstants
+                                                      .appBarAndFontColor),
+                                            ),
+                                          ),
+                                          ListTile(
+                                            onTap: () {
+                                              _logout();
+                                            },
+                                            leading: Icon(
+                                                Icons.call_missed_outgoing,
+                                                size: 40,
+                                                color: Colors.blue),
+                                            title: Text(
+                                              '登出',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ],
@@ -519,10 +526,14 @@ class _TenantMyPageState extends State<TenantMyPage> {
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ));
+                      ),
+                    ],
+                  ),
+                ),
+              ));
   }
 }
 
@@ -581,4 +592,20 @@ class CommonProblem extends StatelessWidget {
       ),
     );
   }
+}
+class Web extends StatefulWidget {
+  @override
+  _WebState createState() => _WebState();
+}
+
+class _WebState extends State<Web> {
+  @override
+  Widget build(BuildContext context) {
+    return  new WebviewScaffold(
+          url: "http://hitcolife.duckdns.org/",
+          appBar: new AppBar(backgroundColor: AppConstants.tenantAppBarAndFontColor,
+            title: new Text("Widget webview"),
+          ),
+        );
+      }
 }

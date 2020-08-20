@@ -40,6 +40,7 @@ class _CreateHouseState extends State<CreateHouse> {
   TextEditingController houseMoneyController; //房租
   TextEditingController cashTimeController; //繳費時間
   TextEditingController electricityMoneyController; //電費
+  TextEditingController summerElectricityMoneyController; //電費
   TextEditingController waterMoneyController; //水費
   TextEditingController housingIntroductionController; //水費
   TextEditingController depositController; //押金
@@ -51,6 +52,8 @@ class _CreateHouseState extends State<CreateHouse> {
   String url1 = '';
   String url = '';
   int electricityMoneyStored = 0;
+  int summerElectricityMoneyStored = 0;
+  int deposit = 0;
   bool cashTime = true;
   bool floor = true;
   bool waterMoney = true;
@@ -62,6 +65,7 @@ class _CreateHouseState extends State<CreateHouse> {
   void initState() {
     houseMoneyController = TextEditingController();
     otherFacilities = TextEditingController();
+    summerElectricityMoneyController = TextEditingController();
     cashTimeController = TextEditingController();
     electricityMoneyController = TextEditingController();
     waterMoneyController = TextEditingController();
@@ -75,7 +79,8 @@ class _CreateHouseState extends State<CreateHouse> {
     houseNameController = TextEditingController();
     housingIntroductionController = TextEditingController();
     depositController = TextEditingController();
-    electricityMoneyController.text = "0";
+    electricityMoneyController.text = "";
+    summerElectricityMoneyController.text = "";
     super.initState();
   }
 
@@ -122,15 +127,17 @@ class _CreateHouseState extends State<CreateHouse> {
 
   void maxWaterMoney() {
     FocusScope.of(context).requestFocus(FocusNode());
+    if(waterMoneyController.text==''){
+      waterMoneyController.text = '0';
+    }
 
+    if (num.parse(waterMoneyController.text) > 999) {
+      waterMoneyController.text = 999.toString();
 
-      if (num.parse(waterMoneyController.text) > 999) {
-        waterMoneyController.text = 999.toString();
-
-        waterMoney = false;
-        showBottomSheet('水費');
-      } else {
-        waterMoney = true;
+      waterMoney = false;
+      showBottomSheet('水費');
+    } else {
+      waterMoney = true;
     }
   }
 
@@ -145,8 +152,14 @@ class _CreateHouseState extends State<CreateHouse> {
         electricityMoney = true;
       }
     } else {
-      if (num.parse(electricityMoneyController.text) > 2000) {
-        electricityMoneyController.text = 2000.toString();
+      if(electricityMoneyController.text==''){
+        electricityMoneyController.text = '0';
+      }
+      if(summerElectricityMoneyController.text==''){
+        summerElectricityMoneyController.text = '0';
+      }
+      if (num.parse(electricityMoneyController.text) > 5000) {
+        electricityMoneyController.text = 5000.toString();
         electricityMoney = false;
         showBottomSheet('電費');
       }
@@ -328,7 +341,6 @@ class _CreateHouseState extends State<CreateHouse> {
                                 _position++;
                               } else if (_position == 4) {
                                 maxBedNumController();
-                                maxCashTime();
                                 maxBedroomsNum();
                                 maxElectricityMoney();
                                 maxWaterMoney();
@@ -429,8 +441,14 @@ class _CreateHouseState extends State<CreateHouse> {
                                                             .toString()
                                                         : electricityMoneyController
                                                             .text,
-                                                    cashTime:
-                                                        cashTimeController.text,
+                                                    summerElectricityMoneyController:
+                                                        !newHouseData.fixed
+                                                            ? summerElectricityMoneyStored
+                                                                .toString()
+                                                            : summerElectricityMoneyController
+                                                                .text,
+                                                    cashTime: newHouseData
+                                                        .payTimeDate,
                                                     party: newHouseData
                                                         .partyValues,
                                                     gender: newHouseData
@@ -474,7 +492,7 @@ class _CreateHouseState extends State<CreateHouse> {
                                                         bedroomsNumController
                                                             .text,
                                                     deposit:
-                                                        depositController.text,
+                                                    deposit.toString(),
                                                     bedNum:
                                                         bedroomsNumController
                                                             .text,
@@ -1711,30 +1729,46 @@ class _CreateHouseState extends State<CreateHouse> {
                                           )),
                                     ],
                                   ),
-                                  Row(
-                                    children: <Widget>[
-                                      Expanded(
-                                        flex: 5,
-                                        child: NewHouseTextFiledKBTypeNum(
-                                          regExp: '0-9',
-                                          maxInt: 2,
-                                          onEditingComplete: maxCashTime,
-                                          labelText: '繳費時間',
-                                          hintText: '每月３',
-                                          controller: cashTimeController,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      Expanded(
-                                          flex: 2,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              '號',
-                                              style: TextStyle(fontSize: 16),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.55,
+                                        child: InputDecorator(
+                                          decoration: InputDecoration(
+                                            labelText: '付款日期',
+                                          ),
+                                          // isEmpty: _group['color'] == Colors.black,
+                                          child: DropdownButtonHideUnderline(
+                                            child: DropdownButton(
+                                              value: newHouseData.data['付款日期'],
+                                              isDense: true,
+                                              onChanged: (newValue) {
+                                                setState(() {
+                                                  FocusScope.of(context)
+                                                      .requestFocus(
+                                                          FocusNode());
+                                                  newHouseData.data['付款日期'] =
+                                                      newValue;
+                                                  String genderValues =
+                                                      newValue;
+                                                  newHouseData.payTimeDate =
+                                                      genderValues;
+                                                  print(
+                                                      newHouseData.payTimeDate);
+                                                });
+                                              },
+                                              items: newHouseData.payTime
+                                                  .map((dynamic color) {
+                                                return DropdownMenuItem(
+                                                  value: color['付款日期'],
+                                                  child: Text(color['付款日期']),
+                                                );
+                                              }).toList(),
                                             ),
-                                          )),
-                                    ],
+                                          ),
+                                        )),
                                   ),
                                   Row(
                                     children: <Widget>[
@@ -1760,7 +1794,7 @@ class _CreateHouseState extends State<CreateHouse> {
                                             newHouseData.storedValue = v;
                                             print(newHouseData.storedValue);
                                             newHouseData.fixed =
-                                                !newHouseData.storedValue;
+                                                !v;
                                           });
                                         },
                                       ),
@@ -1776,7 +1810,7 @@ class _CreateHouseState extends State<CreateHouse> {
                                               setState(() {
                                                 newHouseData.fixed = v;
                                                 newHouseData.storedValue =
-                                                    !newHouseData.fixed;
+                                                    !v;
                                                 print(newHouseData.storedValue);
                                               });
                                             },
@@ -1790,92 +1824,228 @@ class _CreateHouseState extends State<CreateHouse> {
                                     ],
                                   ),
                                   newHouseData.fixed
-                                      ? Row(
+                                      ? Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            Expanded(
-                                              flex: 5,
-                                              child: Container(
-                                                height: 100,
-                                                width: 100,
-                                                child:
-                                                    NewHouseTextFiledKBTypeNum(
-                                                  regExp: '0-9',
-                                                  maxInt: newHouseData.fixed
-                                                      ? 4
-                                                      : 1,
-                                                  onEditingComplete:
-                                                      maxElectricityMoney,
-                                                  labelText: newHouseData.fixed
-                                                      ? '每月'
-                                                      : '每度',
-                                                  hintText: newHouseData.fixed
-                                                      ? '４００'
-                                                      : '５',
-                                                  controller:
-                                                      electricityMoneyController,
-                                                  width: 1,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                                flex: 2,
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    '元',
-                                                    style:
-                                                        TextStyle(fontSize: 16),
+                                            Text('非夏季電費'),
+                                            Row(
+                                              children: <Widget>[
+                                                Expanded(
+                                                  flex: 5,
+                                                  child: Container(
+                                                    height: 100,
+                                                    width: 100,
+                                                    child:
+                                                        NewHouseTextFiledKBTypeNum(
+                                                      regExp: '0-9',
+                                                      maxInt: newHouseData.fixed
+                                                          ? 4
+                                                          : 1,
+                                                      onEditingComplete:
+                                                          maxElectricityMoney,
+                                                      labelText:
+                                                          newHouseData.fixed
+                                                              ? '每月'
+                                                              : '每度',
+                                                      hintText:
+                                                          newHouseData.fixed
+                                                              ? '４００'
+                                                              : '５',
+                                                      controller:
+                                                          electricityMoneyController,
+                                                      width: 1,
+                                                    ),
                                                   ),
-                                                )),
+                                                ),
+                                                Expanded(
+                                                    flex: 2,
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Text(
+                                                        '元',
+                                                        style: TextStyle(
+                                                            fontSize: 16),
+                                                      ),
+                                                    )),
+                                              ],
+                                            ),
                                           ],
                                         )
                                       : Container(
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: <Widget>[
-                                              FlatButton(
-                                                  onPressed:
-                                                      electricityMoneyStored ==
-                                                              0
-                                                          ? null
-                                                          : () {
-                                                              setState(() {
-                                                                electricityMoneyController
-                                                                    .text = "0";
-                                                                electricityMoneyStored--;
-                                                              });
-                                                            },
-                                                  child: Icon(
-                                                      Icons.exposure_neg_1)),
-                                              Text('$electricityMoneyStored'),
-                                              FlatButton(
-                                                  onPressed:
-                                                      electricityMoneyStored ==
-                                                              7
-                                                          ? null
-                                                          : () {
-                                                              setState(() {
-                                                                electricityMoneyController
-                                                                    .text = "0";
-                                                                electricityMoneyStored++;
-                                                              });
-                                                            },
-                                                  child: Icon(
-                                                      Icons.exposure_plus_1)),
-                                              Expanded(
-                                                  flex: 2,
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Text(
-                                                      '元',
-                                                      style: TextStyle(
-                                                          fontSize: 16),
+                                              Text('非夏季電費'),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceAround,
+                                                children: <Widget>[
+                                                  FlatButton(
+                                                      onPressed:
+                                                          electricityMoneyStored ==
+                                                                  0
+                                                              ? null
+                                                              : () {
+                                                                  setState(() {
+                                                                    electricityMoneyController
+                                                                            .text =
+                                                                        "0";
+                                                                    electricityMoneyStored--;
+                                                                  });
+                                                                },
+                                                      child: Icon(Icons
+                                                          .exposure_neg_1)),
+                                                  Text(
+                                                      '$electricityMoneyStored'),
+                                                  FlatButton(
+                                                      onPressed:
+                                                          electricityMoneyStored ==
+                                                                  5
+                                                              ? null
+                                                              : () {
+                                                                  setState(() {
+                                                                    electricityMoneyController
+                                                                            .text =
+                                                                        "0";
+                                                                    electricityMoneyStored++;
+                                                                  });
+                                                                },
+                                                      child: Icon(Icons
+                                                          .exposure_plus_1)),
+                                                  Expanded(
+                                                      flex: 2,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          '元',
+                                                          style: TextStyle(
+                                                              fontSize: 16),
+                                                        ),
+                                                      )),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                  newHouseData.fixed
+                                      ? Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text('夏季電費(6/1-9/30)'),
+                                            ),
+                                            Row(
+                                              children: <Widget>[
+                                                Expanded(
+                                                  flex: 5,
+                                                  child: Container(
+                                                    height: 100,
+                                                    width: 100,
+                                                    child:
+                                                        NewHouseTextFiledKBTypeNum(
+                                                      regExp: '0-9',
+                                                      maxInt: newHouseData.fixed
+                                                          ? 4
+                                                          : 1,
+                                                      onEditingComplete:
+                                                          maxElectricityMoney,
+                                                      labelText:
+                                                          newHouseData.fixed
+                                                              ? '每月'
+                                                              : '每度',
+                                                      hintText:
+                                                          newHouseData.fixed
+                                                              ? '４００'
+                                                              : '５',
+                                                      controller:
+                                                          summerElectricityMoneyController,
+                                                      width: 1,
                                                     ),
-                                                  )),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                    flex: 2,
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Text(
+                                                        '元',
+                                                        style: TextStyle(
+                                                            fontSize: 16),
+                                                      ),
+                                                    )),
+                                              ],
+                                            ),
+                                          ],
+                                        )
+                                      : Container(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Text('夏季電費(6/1-9/30)'),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceAround,
+                                                children: <Widget>[
+                                                  FlatButton(
+                                                      onPressed:
+                                                          summerElectricityMoneyStored ==
+                                                                  0
+                                                              ? null
+                                                              : () {
+                                                                  setState(() {
+                                                                    summerElectricityMoneyController
+                                                                            .text =
+                                                                        "0";
+                                                                    summerElectricityMoneyStored--;
+                                                                  });
+                                                                },
+                                                      child: Icon(Icons
+                                                          .exposure_neg_1)),
+                                                  Text(
+                                                      '$summerElectricityMoneyStored'),
+                                                  FlatButton(
+                                                      onPressed:
+                                                          summerElectricityMoneyStored ==
+                                                                  6
+                                                              ? null
+                                                              : () {
+                                                                  setState(() {
+                                                                    summerElectricityMoneyController
+                                                                            .text =
+                                                                        "0";
+                                                                    summerElectricityMoneyStored++;
+                                                                  });
+                                                                },
+                                                      child: Icon(Icons
+                                                          .exposure_plus_1)),
+                                                  Expanded(
+                                                      flex: 2,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          '元',
+                                                          style: TextStyle(
+                                                              fontSize: 16),
+                                                        ),
+                                                      )),
+                                                ],
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -1902,7 +2072,7 @@ class _CreateHouseState extends State<CreateHouse> {
                                             value: newHouseData.waterFixed,
                                             onChanged: (v) {
                                               setState(() {
-                                                newHouseData.waterFixed =! v;
+                                                newHouseData.waterFixed = !v;
                                               });
                                             },
                                           ),
@@ -2042,22 +2212,53 @@ class _CreateHouseState extends State<CreateHouse> {
                                       )
                                     ],
                                   ),
-                                  Row(
-                                    children: <Widget>[
-                                      Expanded(
-                                        flex: 3,
-                                        child: NewHouseTextFiledKBTypeNum(
-                                          regExp: '0-2',
-                                          maxInt: 1,
-                                          labelText: '押金',
-                                          hintText: '依法律規定最高上限為2',
-                                          controller: depositController,
-                                          width: 1,
+                                  Container(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          children: <Widget>[
+                                            FlatButton(
+                                                onPressed: deposit == 0
+                                                    ? null
+                                                    : () {
+                                                        setState(() {
+                                                          deposit--;
+                                                        });
+                                                      },
+                                                child:
+                                                    Icon(Icons.exposure_neg_1)),
+                                            Text('$deposit'),
+                                            FlatButton(
+                                                onPressed: deposit == 2
+                                                    ? null
+                                                    : () {
+                                                        setState(() {
+                                                          deposit++;
+                                                        });
+                                                      },
+                                                child: Icon(
+                                                    Icons.exposure_plus_1)),
+                                            Expanded(
+                                                flex: 2,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    '個月',
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                  ),
+                                                )),
+                                          ],
                                         ),
-                                      ),
-                                      Expanded(child: Text('個月')),
-                                    ],
+                                      ],
+                                    ),
                                   ),
+
                                 ],
                               ),
                             )

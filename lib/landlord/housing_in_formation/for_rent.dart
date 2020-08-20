@@ -21,7 +21,11 @@ class ForRentCard extends StatelessWidget {
   final String houseMoney;
   final String tenantName;
   final String phoneNumber;
+  final String lastRecord;
   final bool hasDoorLock;
+  final bool hasGateway;
+  final bool noHasGatewayFixd;
+  final String gatewayNUM;
   final List<String> imageList;
   String doorLockNUM;
 
@@ -63,6 +67,7 @@ class ForRentCard extends StatelessWidget {
   final bool dishwasher;
   final bool phone;
   final bool wiredNetwork;
+  final String summerElectricityMoney;
   final bool preservation;
   final bool fingerprintPasswordLock;
   final String contract; //合約日期
@@ -91,13 +96,18 @@ class ForRentCard extends StatelessWidget {
     @required this.allFloor,
     @required this.fixed,
     @required this.otherFacilities,
+    @required this.summerElectricityMoney,
     @required this.area,
+    @required this.noHasGatewayFixd,
+    @required this.hasGateway,
+    @required this.gatewayNUM,
     @required this.bathroomType,
     @required this.doorLockNUM,
     @required this.bedNum,
     @required this.bedroomsNum,
     @required this.cityValues,
     @required this.hasDoorLock,
+    @required this.lastRecord,
     @required this.deposit,
     @required this.floor,
     @required this.haveBalcony,
@@ -195,7 +205,7 @@ class ForRentCard extends StatelessWidget {
               Text('確定解約'),
             ],
           ),
-          content: Text('解約後不可復原!!'),
+          content: Text('對話紀錄及出租狀態將不可復原!!'),
           actions: <Widget>[
             //操作控件
             CupertinoDialogAction(
@@ -731,6 +741,13 @@ class ForRentCard extends StatelessWidget {
           .document(houseName)
           .setData({
         '門鎖相關': {'門鎖編號': doorLockNUM, '有無門鎖': hasDoorLock, '臨時密碼': '',},
+        '網關相關': {
+          '網關編號':gatewayNUM??'',
+          '有無電表': hasGateway??false,
+          '上期度數': lastRecord??'',
+          '本期度數': '',
+          '使用度數':'',
+        },
         '照片位置': {
           '照片1': houseImages,
           '照片2': houseImages2,
@@ -767,8 +784,10 @@ class ForRentCard extends StatelessWidget {
           '房租': houseMoney,
           '繳費時間': cashTime,
           '電費': electricityMoney,
+          '夏季電費': summerElectricityMoney,
           '水費': waterMoney,
           '電費儲值': fixed,
+          '有電表儲值單位': noHasGatewayFixd,
           '管理費': managementFee,
           '網路費': internetFee,
           '第四臺': television,
@@ -839,6 +858,7 @@ class ForRentCard extends StatelessWidget {
                           fixed: fixed,
                           houseMoney: houseMoney,
                           managementFee: managementFee,
+                          summerElectricityMoney:summerElectricityMoney ,
                           gasFee: gasFee,
                           internetFee: internetFee,
                           television: television,
@@ -880,6 +900,7 @@ class ForRentCard extends StatelessWidget {
                           houseName: houseName,
                           tenantMail: tenantMail,
                           contract: contract,
+                          noHasGatewayFixd: noHasGatewayFixd,
                         )));
           },
           child: Card(

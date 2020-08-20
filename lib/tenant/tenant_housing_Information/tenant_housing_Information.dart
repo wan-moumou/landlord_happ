@@ -7,10 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:landlord_happy/app_const/Adapt.dart';
-import 'package:landlord_happy/app_const/Widgets.dart';
 import 'package:landlord_happy/app_const/app_const.dart';
 import 'package:landlord_happy/landlord/housing_in_formation/preview.dart';
-import 'package:landlord_happy/tenant/tenant_guest_home_page.dart';
 
 class TenantHousingInformationPage extends StatefulWidget {
   static final String routeName = '/TenantHousingInformationPage';
@@ -28,9 +26,10 @@ class _TenantHousingInformationPageState
 
   final _firestore = Firestore.instance;
 
-  String landlordName;
+  String landlordName = '';
 
   String houseName;
+  var contract;
   final List<Tab> tabCard = <Tab>[
     Tab(
       text: '房屋資訊',
@@ -43,30 +42,32 @@ class _TenantHousingInformationPageState
     ),
   ];
 
-  void getData() async {
+  Future getData() async {
     final user = await _auth.currentUser();
     if (user != null) {
       loginUser = user.email;
     }
-    print(loginUser);
     //確認房客身份
     await _firestore
         .collection("/房客/帳號資料/$loginUser")
         .getDocuments()
         .then((QuerySnapshot snapshot) {
       snapshot.documents.forEach((f) {
-        landlordName = f['房東姓名'];
-        houseName = f['房屋名稱'];
+        setState(() {
+          landlordName = f['房東姓名'];
+          houseName = f['房屋名稱'];
+        });
       });
-    });
-    setState(() {
-
     });
   }
 
+  String nowMonth;
+
   @override
   void initState() {
+    nowMonth = DateTime.now().month.toString();
     getData();
+
     super.initState();
   }
 
@@ -79,7 +80,7 @@ class _TenantHousingInformationPageState
           centerTitle: true,
           automaticallyImplyLeading: false,
           title: Text(
-            houseName==''?'尚未加入':houseName,
+            houseName == '' ? '尚未加入' : houseName,
             style: TextStyle(
                 fontSize: 25, color: Colors.white, fontWeight: FontWeight.bold),
           ),
@@ -90,97 +91,126 @@ class _TenantHousingInformationPageState
             tabs: tabCard,
           ),
         ),
-        body:houseName== ''? Container(color: AppConstants.tenantBackColor,
-          child: Center(
-              child: Container(
-                child: Text('請連絡房東並加入房間'),
-              ))):StreamBuilder<DocumentSnapshot>(
-            stream: Firestore.instance
-                .collection('/房東/帳號資料/$landlordName/資料/擁有房間')
-                .document(houseName)
+        body: houseName==''
+            ? Container(
+            color: AppConstants.tenantBackColor,
+            child: Center(
+                child: Container(
+                  child: Text('請連絡房東並加入房間'),
+                ))): StreamBuilder<DocumentSnapshot>(
+            stream:  Firestore.instance
+                .collection('/房東/帳號資料/$landlordName/資料/擁有房間/$houseName/合約')
+                .document('房間合約')
                 .snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-              final data = snapshot.data.data;
-              print(data);
-              return TabBarView(children: <Widget>[
-                TenantInformation1(
-                  address: data['房間位置與類型']['地址'],
-                  houseMoney: data['房屋費用設定']['房租'],
-                  managementFee: data['房屋費用設定']['管理費'],
-                  gasFee: data['房屋費用設定']['瓦斯費'],
-                  internetFee: data['房屋費用設定']['網路費'],
-                  television: data['房屋費用設定']['第四臺'],
-                  pet: data['其他條件']['寵物'],
-                  airConditioner: data['設備']['冷氣'],
-                  wifi: data['設備']['wifi'],
-                  refrigerator: data['設備']['冰箱'],
-                  phone: data['設備']['電話'],
-                  oven: data['設備']['烤箱'],
-                  washingMachine: data['設備']['洗衣機'],
-                  waterHeater: data['設備']['熱水器'],
-                  dishwasher: data['設備']['洗碗機'],
-                  microwaveOven: data['設備']['微波爐'],
-                  cookerHood: data['設備']['油煙機'],
-                  wiredNetwork: data['設備']['有線網路'],
-                  gas: data['設備']['瓦斯'],
-                  fingerprintPasswordLock: data['設備']['指紋密碼鎖'],
-                  preservation: data['設備']['保全設備'],
-                  tv: data['設備']['電視'],
-                  locker: data['家具']['置物櫃'],
-                  fluidTable: data['家具']['流理臺'],
-                  dressingTable: data['家具']['梳妝台'],
-                  bookTable: data['家具']['書桌'],
-                  gasStove: data['家具']['瓦斯爐'],
-                  bedside: data['家具']['床頭組'],
-                  tvTable: data['家具']['電視櫃'],
-                  sofa: data['家具']['沙發'],
-                  wardrobe: data['家具']['衣櫃'],
-                  bookBox: data['家具']['書櫃'],
-                  shoeBox: data['家具']['鞋櫃'],
-                  diningTable: data['家具']['餐桌'],
-                  coffeeTable: data['家具']['茶几'],
-                  waterMoney: data['房屋費用設定']['水費'],
-                  electricityMoney: data['房屋費用設定']['電費'],
-                  cashTime: data['房屋費用設定']['繳費時間'],
-                  party: data['其他條件']['開伙'],
-                  gender: data['其他條件']['性別'],
-                  smoke: data['其他條件']['吸菸'],
-                  fixed: data['房屋費用設定']['電費儲值'],
-                  houseName: houseName,
-                  tenantMail: data['房客帳號'],
-                ),
-                StreamBuilder<QuerySnapshot>(
-                    stream: Firestore.instance
-                        .collection('房東/帳號資料/$landlordName')
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Container(
-                          width: 300,
-                          height: 300,
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      } else {
-                        final data1 = snapshot.data.documents;
-                        print(data1[1]['手機號碼']);
-                        return TenantInformation2(
-                          tenantMail: landlordName,
-                          phoneNumber: data1[1]['手機號碼'],
-                          tenantName: data1[1]['name'],
-                          tenantImageUrl: data1[1]['url'],
-                          contract: data['生成時間'],
-                        );
-                      }
-                    }),
-                TenantInformation3()
-              ]);
+              final contractData = snapshot.data.data;
+              return Container(
+                child: contractData['合約類型']!=true
+                    ? Container(
+                        color: AppConstants.tenantBackColor,
+                        child: Center(
+                            child: Container(
+                          child: Text('請查看信息通知並送出合約'),
+                        )))
+                    : StreamBuilder<DocumentSnapshot>(
+                        stream: Firestore.instance
+                            .collection('/房東/帳號資料/$landlordName/資料/擁有房間')
+                            .document(houseName)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState==
+                              ConnectionState.waiting) {
+                            return Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.data.data ==null) {
+                            return Center(
+                              child: Text('請查看連絡房東合約相關事宜'),
+                            );
+                          }
+                          final data = snapshot.data.data;
+
+                          return TabBarView(children: <Widget>[
+                            TenantInformation1(
+                                address: data['房間位置與類型']['地址'],
+                                houseMoney: data['房屋費用設定']['房租'],
+                                managementFee: data['房屋費用設定']['管理費'],
+                                gasFee: data['房屋費用設定']['瓦斯費'],
+                                internetFee: data['房屋費用設定']['網路費'],
+                                television: data['房屋費用設定']['第四臺'],
+                                pet: data['其他條件']['寵物'],
+                                airConditioner: data['設備']['冷氣'],
+                                wifi: data['設備']['wifi'],
+                                refrigerator: data['設備']['冰箱'],
+                                phone: data['設備']['電話'],
+                                oven: data['設備']['烤箱'],
+                                washingMachine: data['設備']['洗衣機'],
+                                waterHeater: data['設備']['熱水器'],
+                                dishwasher: data['設備']['洗碗機'],
+                                microwaveOven: data['設備']['微波爐'],
+                                cookerHood: data['設備']['油煙機'],
+                                wiredNetwork: data['設備']['有線網路'],
+                                gas: data['設備']['瓦斯'],
+                                fingerprintPasswordLock: data['設備']['指紋密碼鎖'],
+                                preservation: data['設備']['保全設備'],
+                                tv: data['設備']['電視'],
+                                locker: data['家具']['置物櫃'],
+                                fluidTable: data['家具']['流理臺'],
+                                dressingTable: data['家具']['梳妝台'],
+                                bookTable: data['家具']['書桌'],
+                                gasStove: data['家具']['瓦斯爐'],
+                                bedside: data['家具']['床頭組'],
+                                tvTable: data['家具']['電視櫃'],
+                                sofa: data['家具']['沙發'],
+                                wardrobe: data['家具']['衣櫃'],
+                                bookBox: data['家具']['書櫃'],
+                                shoeBox: data['家具']['鞋櫃'],
+                                diningTable: data['家具']['餐桌'],
+                                coffeeTable: data['家具']['茶几'],
+                                waterMoney: data['房屋費用設定']['水費'],
+                                electricityMoney: data['房屋費用設定']['電費'],
+                                summerElectricity: data['房屋費用設定']['夏季電費'],
+                                cashTime: data['房屋費用設定']['繳費時間'],
+                                party: data['其他條件']['開伙'],
+                                gender: data['其他條件']['性別'],
+                                smoke: data['其他條件']['吸菸'],
+                                fixed: data['房屋費用設定']['電費儲值'],
+                                noHasGatewayFixd: data['房屋費用設定']['有電表儲值單位'],
+                                hasGateway: data['網關相關']['有無電表'],
+                                houseName: houseName,
+                                tenantMail: data['房客帳號'],
+                                nowMonth: nowMonth),
+                            StreamBuilder<QuerySnapshot>(
+                                stream: Firestore.instance
+                                    .collection('房東/帳號資料/$landlordName')
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Container(
+                                      width: 300,
+                                      height: 300,
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  } else {
+                                    final data1 = snapshot.data.documents;
+
+                                    return TenantInformation2(
+                                      tenantMail: landlordName,
+                                      phoneNumber: data1[1]['手機號碼'],
+                                      tenantName: data1[1]['name'],
+                                      tenantImageUrl: data1[1]['url'],
+                                      contract: data['生成時間'],
+                                    );
+                                  }
+                                }),
+                            TenantInformation3()
+                          ]);
+                        }),
+              );
             }),
       ),
     );
@@ -192,10 +222,13 @@ class TenantInformation1 extends StatelessWidget {
   final String cashTime;
 
   final bool fixed;
+  final bool noHasGatewayFixd;
   final String address;
   final String houseMoney;
   final String waterMoney;
   final String electricityMoney;
+  final String summerElectricity;
+
   final bool television;
   final bool internetFee;
   final bool gasFee;
@@ -232,13 +265,17 @@ class TenantInformation1 extends StatelessWidget {
   final bool wiredNetwork;
   final bool preservation;
   final bool fingerprintPasswordLock;
+  final bool hasGateway;
   final String houseName;
   final String tenantMail;
+  final String nowMonth;
   final String contract; //合約日期
   TenantInformation1(
       {this.index,
       this.contract,
+      this.nowMonth,
       this.fixed,
+      this.noHasGatewayFixd,
       this.tenantMail,
       this.address,
       this.houseMoney,
@@ -248,6 +285,8 @@ class TenantInformation1 extends StatelessWidget {
       this.television,
       this.pet,
       this.airConditioner,
+      this.summerElectricity,
+      this.hasGateway,
       this.wifi,
       this.refrigerator,
       this.phone,
@@ -385,11 +424,10 @@ class TenantInformation1 extends StatelessWidget {
         .then((QuerySnapshot snapshot) {
       snapshot.documents.forEach((f) {
         loginPassWord = f['密碼'];
-
-        print(getedDoorPassWord);
       });
     });
   }
+
   void contractQuery(BuildContext context) {
     showDialog(
         context: context,
@@ -403,8 +441,8 @@ class TenantInformation1 extends StatelessWidget {
             ),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(
-                  Radius.circular(10),
-                )),
+              Radius.circular(10),
+            )),
             elevation: 4,
             content: StatefulBuilder(builder: (context, StateSetter setState) {
               return Container(
@@ -420,6 +458,7 @@ class TenantInformation1 extends StatelessWidget {
           );
         });
   }
+
   void earlyTermination(BuildContext context) {
     showDialog(
         context: context,
@@ -433,8 +472,8 @@ class TenantInformation1 extends StatelessWidget {
             ),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(
-                  Radius.circular(10),
-                )),
+              Radius.circular(10),
+            )),
             elevation: 4,
             content: StatefulBuilder(builder: (context, StateSetter setState) {
               return Container(
@@ -450,6 +489,7 @@ class TenantInformation1 extends StatelessWidget {
           );
         });
   }
+
   void waterAndEle(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
@@ -644,8 +684,6 @@ class TenantInformation1 extends StatelessWidget {
     BuildContext context,
     String loginPassword,
   ) {
-    print(loginPassword);
-
     showDialog(
         context: context,
         builder: (context) {
@@ -713,8 +751,6 @@ class TenantInformation1 extends StatelessWidget {
     BuildContext context,
     String loginPassword,
   ) {
-    print(loginPassword);
-
     showDialog(
         context: context,
         builder: (context) {
@@ -777,7 +813,22 @@ class TenantInformation1 extends StatelessWidget {
           );
         });
   }
+String getDetail(){
+    String dsa;
+    if(hasGateway){
+      dsa=  noHasGatewayFixd
+          ? '非夏季電費:$electricityMoney/度\n夏季電費:$summerElectricity/度'
+          : '非夏季電費:$electricityMoney/月\n夏季電費:$summerElectricity/月';
 
+    }
+    else {
+      dsa=    fixed
+          ? '非夏季電費:$electricityMoney/度\n夏季電費:$summerElectricity/度'
+          : '非夏季電費:$electricityMoney/月\n夏季電費:$summerElectricity/月';
+    }
+
+    return dsa;
+  }
   @override
   Widget build(BuildContext context) {
     getLoginPass();
@@ -836,7 +887,7 @@ class TenantInformation1 extends StatelessWidget {
                       //垂直分隔線
                       FlatButton(
                           onPressed: () {
-                            contractRelated(context,loginPassWord);
+                            contractRelated(context, loginPassWord);
                           },
                           child: Column(
                             children: <Widget>[
@@ -873,9 +924,7 @@ class TenantInformation1 extends StatelessWidget {
                 ),
                 HouseData(
                   title: '電費',
-                  detail: fixed
-                      ? '電費:$electricityMoney/度'
-                      : '電費:$electricityMoney/月',
+                  detail:getDetail(),
                   backColor: AppConstants.tenantBackColor,
                 ),
                 HouseIcon(
@@ -1284,7 +1333,6 @@ class _TenantInformation3State extends State<TenantInformation3> {
           .collection('/房客/帳號資料/$loginUser/帳務資料/${DateTime.now().month}月')
           .getDocuments();
       items = aa.documents.length;
-      print(items);
     }
   }
 
@@ -1344,7 +1392,7 @@ class _TenantInformation3State extends State<TenantInformation3> {
                         }
                         {
                           final data = snapshot.data.documents;
-                          print(data);
+
                           return ListView.builder(
                               shrinkWrap: true,
                               itemCount: items,

@@ -56,9 +56,11 @@ class ForRentTenantInformation extends StatefulWidget {
   final bool preservation;
   final bool fingerprintPasswordLock;
   final String houseName;
+  final String summerElectricityMoney;
   final String tenantMail;
   final String contract; //合約日期
   final bool fixed;
+  final bool noHasGatewayFixd;
   final String otherFacilities;
 
   ForRentTenantInformation(
@@ -66,10 +68,12 @@ class ForRentTenantInformation extends StatefulWidget {
       this.contract,
       this.otherFacilities,
       this.fixed,
+      this.noHasGatewayFixd,
       this.tenantMail,
       this.address,
       this.houseMoney,
       this.managementFee,
+      this.summerElectricityMoney,
       this.gasFee,
       this.internetFee,
       this.television,
@@ -155,6 +159,7 @@ class _ForRentTenantInformationState extends State<ForRentTenantInformation> {
             fixed: widget.fixed,
             houseMoney: widget.houseMoney,
             managementFee: widget.managementFee,
+            summerElectricityMoney: widget.summerElectricityMoney,
             gasFee: widget.gasFee,
             internetFee: widget.internetFee,
             television: widget.television,
@@ -194,6 +199,7 @@ class _ForRentTenantInformationState extends State<ForRentTenantInformation> {
             gender: widget.gender,
             smoke: widget.smoke,
             houseName: widget.houseName,
+            noHasGatewayFixd: widget.noHasGatewayFixd,
           ),
           StreamBuilder<QuerySnapshot>(
               stream: Firestore.instance
@@ -245,11 +251,13 @@ class TenantInformation1 extends StatelessWidget {
   final bool managementFee;
   final String gender;
   final String pet;
+  final String summerElectricityMoney;
   final String smoke;
   final String party;
   final String otherFacilities;
   final String houseName;
   final bool tvTable;
+  final bool noHasGatewayFixd;
   final bool diningTable;
   final bool shoeBox;
   final bool bookBox;
@@ -284,8 +292,10 @@ class TenantInformation1 extends StatelessWidget {
       this.address,
       this.houseMoney,
       this.houseName,
+      this.summerElectricityMoney,
       this.fixed,
       this.otherFacilities,
+      this.noHasGatewayFixd,
       this.managementFee,
       this.gasFee,
       this.internetFee,
@@ -702,9 +712,8 @@ class TenantInformation1 extends StatelessWidget {
                 ),
                 HouseData(
                   title: '電費',
-                  detail: fixed
-                      ? '電費:$electricityMoney/度'
-                      : '電費:$electricityMoney/月',
+                  detail:  noHasGatewayFixd?'非夏季電費:$electricityMoney/度\n夏季電費:$summerElectricityMoney/度'
+                      : '非夏季電費:$electricityMoney/月\n夏季電費:$summerElectricityMoney/月',
                   backColor: AppConstants.backColor,
                 ),
                 HouseIcon(
